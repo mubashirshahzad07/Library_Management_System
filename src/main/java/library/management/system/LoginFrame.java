@@ -147,8 +147,6 @@ public class LoginFrame extends JFrame implements ActionListener {
             this.username.setCaretPosition(0);
             roles.setSelectedIndex(0);
 
-            // Shumaail: run the SQL query to find the current entry based on username, password and role
-
             // 1. if the login was successful
             JOptionPane.showMessageDialog(
                     null,

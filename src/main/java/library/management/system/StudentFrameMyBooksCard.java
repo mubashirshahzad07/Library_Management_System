@@ -49,8 +49,6 @@ public class StudentFrameMyBooksCard {
         booksReturnInformation.setBackground(new Color(0xF0E526));
         booksReturnInformation.setText("Data Structures is due on Apr 25 ⎯ please return on time.");
 
-        // Shumaail: find the book with least due time left => return the book name along side its due date
-
         // if student has any overdue book 
         // booksReturnInformation.setForeground(Color.WHITE);
         // booksReturnInformation.setBackground(new Color(0xF59E0B));
