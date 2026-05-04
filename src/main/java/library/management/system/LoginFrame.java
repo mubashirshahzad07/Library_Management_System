@@ -139,7 +139,7 @@ public class LoginFrame extends JFrame implements ActionListener {
 
             System.out.println("Username = " + username);
             System.out.println("Password = " + password);
-        System.out.println("Role = " + role);
+            System.out.println("Role = " + role);
 
             this.username.setText("");
             this.password.setText("");
@@ -165,7 +165,7 @@ public class LoginFrame extends JFrame implements ActionListener {
                 e.printStackTrace();
             }
 
-            new StudentFrame(this);
+            new LibrarianFrame(this);
             // end of 1
 
         //    // 2. if the login failed
