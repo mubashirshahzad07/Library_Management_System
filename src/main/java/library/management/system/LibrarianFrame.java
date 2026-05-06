@@ -129,9 +129,9 @@ public class LibrarianFrame extends JFrame implements ActionListener {
         // members card
         membersCard = new JPanel(new GridBagLayout());
         membersCard.setBackground(new Color(0x212020));
-        new StudentFrameHistoryCard(membersCard);
         String MEMBERS = "MEMBERS";
         contentPanel.add(membersCard, MEMBERS);
+        new LibrarianFrameMemberCard(membersCard);
 
         dashBoard.addActionListener(actionEvent -> cardLayout.show(contentPanel, DASHBOARD));
         issueBook.addActionListener(actionEvent -> cardLayout.show(contentPanel, ISSUE_BOOK));
