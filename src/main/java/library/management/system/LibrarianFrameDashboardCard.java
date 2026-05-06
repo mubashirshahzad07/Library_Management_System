@@ -30,7 +30,7 @@ public class LibrarianFrameDashboardCard {
         myDashboardLabel.setForeground(Color.WHITE);
         myDashboardLabel.setFont(new Font("FiraMono NerdFonts", Font.BOLD, 30));
 
-        JLabel dashboardStudentIcon = new JLabel(new ImageIcon(ClassLoader.getSystemResource("librarian_label.png")));
+        JLabel libraryIcon = new JLabel(new ImageIcon(ClassLoader.getSystemResource("librarian_label.png")));
 
         GridBagConstraints gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -43,7 +43,7 @@ public class LibrarianFrameDashboardCard {
         gridBagConstraints.gridy = 0;
         gridBagConstraints.anchor = GridBagConstraints.EAST;
         gridBagConstraints.insets = new Insets(30, 15, 20, 25);
-        dashboardCard.add(dashboardStudentIcon, gridBagConstraints);
+        dashboardCard.add(libraryIcon, gridBagConstraints);
     }
 
     private void addBooksReturnInformation() {

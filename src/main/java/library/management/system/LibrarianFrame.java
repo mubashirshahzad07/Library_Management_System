@@ -115,9 +115,9 @@ public class LibrarianFrame extends JFrame implements ActionListener {
         // return book card
         returnBookCard = new JPanel(new GridBagLayout());
         returnBookCard.setBackground(new Color(0x212020));
-        new StudentFrameMyBooksCard(returnBookCard);
         String RETURN_BOOK = "RETURN BOOK CARD";
         contentPanel.add(returnBookCard, RETURN_BOOK);
+        new LibrarianFrameReturnBookCard(returnBookCard);
 
         // catalog card
         catalogCard = new JPanel(new GridBagLayout());

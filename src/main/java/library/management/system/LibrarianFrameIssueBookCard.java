@@ -1,9 +1,6 @@
 package library.management.system;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
 import java.awt.*;
 
 /**
@@ -25,7 +22,7 @@ public class LibrarianFrameIssueBookCard {
         issueBookLabel.setForeground(Color.WHITE);
         issueBookLabel.setFont(new Font("FiraMono NerdFonts", Font.BOLD, 30));
 
-        JLabel dashboardStudentIcon = new JLabel(new ImageIcon(ClassLoader.getSystemResource("librarian_label.png")));
+        JLabel libraryIcon = new JLabel(new ImageIcon(ClassLoader.getSystemResource("librarian_label.png")));
 
         GridBagConstraints gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -38,7 +35,7 @@ public class LibrarianFrameIssueBookCard {
         gridBagConstraints.gridy = 0;
         gridBagConstraints.anchor = GridBagConstraints.EAST;
         gridBagConstraints.insets = new Insets(30, 300, 20, 25);
-        issueBookCard.add(dashboardStudentIcon, gridBagConstraints);
+        issueBookCard.add(libraryIcon, gridBagConstraints);
     }
 
     private void addIssueBookPanel() {
@@ -196,7 +193,7 @@ public class LibrarianFrameIssueBookCard {
     private void addVerticalFiller() {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
-        gbc.gridy = 5;
+        gbc.gridy = 2;
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.VERTICAL;
         issueBookCard.add(Box.createVerticalGlue(), gbc);
