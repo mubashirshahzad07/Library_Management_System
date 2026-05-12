@@ -3,14 +3,16 @@ package library.management.system.model;
 public class Book {
 
     private int bookId;
+    private String isbn;
     private String title;
     private String author;
     private String category;
     private int totalCopies;
     private int availableCopies;
 
-    public Book(int bookId, String title, String author, String category, int totalCopies, int availableCopies) {
+    public Book(int bookId, String isbn, String title, String author, String category, int totalCopies, int availableCopies) {
         this.bookId = bookId;
+        this.isbn = isbn;
         this.title = title;
         this.author = author;
         this.category = category;
@@ -21,6 +23,10 @@ public class Book {
     
     public int getBookId() {
         return bookId;
+    }
+    
+    public String getIsbn() {
+        return isbn;
     }
 
     public String getTitle() {
