@@ -1,4 +1,4 @@
-
+package library.management.system.model;
 
 public class Book {
 
@@ -63,16 +63,4 @@ public class Book {
         this.availableCopies = availableCopies;
     }
 
-    
-    public void issueBook() {
-        if (availableCopies > 0) {
-            availableCopies--;
-        }
-    }
-
-    public void returnBook() {
-        if (availableCopies < totalCopies) {
-            availableCopies++;
-        }
-    }
 }

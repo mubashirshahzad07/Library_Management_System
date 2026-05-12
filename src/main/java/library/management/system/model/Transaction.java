@@ -1,3 +1,4 @@
+package library.management.system.model;
 
 import java.util.Date;
 
@@ -9,14 +10,12 @@ public class Transaction {
     private Date issueDate;
     private Date dueDate;
     private Date returnDate;
-    private double fineAmount;
     private String status;
-    private boolean finePaid;
 
     
     public Transaction(int transactionId, int userId, int bookId,
                        Date issueDate, Date dueDate,
-                       Date returnDate, double fineAmount, String status) {
+                       Date returnDate, String status) {
 
         this.transactionId = transactionId;
         this.userId = userId;
@@ -24,7 +23,6 @@ public class Transaction {
         this.issueDate = issueDate;
         this.dueDate = dueDate;
         this.returnDate = returnDate;
-        this.fineAmount = fineAmount;
         this.status = status;
     }
 
@@ -53,26 +51,12 @@ public class Transaction {
         return returnDate;
     }
 
-    public double getFineAmount() {
-        return fineAmount;
-    }
-
     public String getStatus() {
         return status;
     }
 
-      public boolean finePaid() {
-        return finePaid;
-    }
-
-
-
     public void setReturnDate(Date returnDate) {
         this.returnDate = returnDate;
-    }
-
-    public void setFineAmount(double fineAmount) {
-        this.fineAmount = fineAmount;
     }
 
     public void setStatus(String status) {
