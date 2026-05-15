@@ -1,3 +1,8 @@
+package library.management.system.dao;
+
+import library.management.system.model.Book;
+import library.management.system.util.DBConnection;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -7,18 +12,19 @@ public class BookDAO {
     // ── Insert a new book ─────────────────────────────────────────────────────
     public boolean insertBook(Book book) {
         String sql = "INSERT INTO books "
-                   + "(book_id, title, author, category, total_copies, available_copies) "
-                   + "VALUES (?, ?, ?, ?, ?, ?)";
+           + "(book_id, isbn, title, author, category, total_copies, available_copies) "
+           + "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt   (1, book.getBookId());
-            ps.setString(2, book.getTitle());
-            ps.setString(3, book.getAuthor());
-            ps.setString(4, book.getCategory());
-            ps.setInt   (5, book.getTotalCopies());
-            ps.setInt   (6, book.getAvailableCopies());
+            ps.setString(2, book.getIsbn());      
+            ps.setString(3, book.getTitle());
+            ps.setString(4, book.getAuthor());
+            ps.setString(5, book.getCategory());
+            ps.setInt   (6, book.getTotalCopies());
+            ps.setInt   (7, book.getAvailableCopies());
 
             return ps.executeUpdate() > 0;
 
@@ -166,6 +172,7 @@ public class BookDAO {
     private Book mapRow(ResultSet rs) throws SQLException {
         return new Book(
             rs.getInt   ("book_id"),
+            rs.getString("isbn"),
             rs.getString("title"),
             rs.getString("author"),
             rs.getString("category"),
