@@ -15,7 +15,7 @@ public class UserDAO {
     
     public User findByUsernameAndRole(String username, String role) {
         
-        String sql = "SELECT * FROM Users WHERE username = ? AND role = ?";
+        String sql = "SELECT * FROM Users WHERE username = ? AND role = ? AND is_active = TRUE" ;
         
         try (
             Connection conn = DBConnection.getConnection();
