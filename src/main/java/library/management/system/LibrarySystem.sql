@@ -78,7 +78,7 @@ FROM Transactions t
 JOIN Users u ON t.user_id = u.user_id
 JOIN Books b ON t.book_id = b.book_id
 LEFT JOIN Fines f ON f.transaction_id = t.transaction_id
-WHERE u.role = 'STUDENT' AND u.is_active = TRUE AND b.is_active = TRUE;
+WHERE u.role = 'STUDENT';
 
 CREATE VIEW librarian_issued_books AS
 SELECT
