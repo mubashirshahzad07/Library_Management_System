@@ -1,4 +1,4 @@
-package library.management.system;
+package library.management.system.ui;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -9,30 +9,30 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 /**
- * @since 06 May 2026
- * Handles the catalog window for librarians
+ * @since 15 May 2026
+ * Handles the members window for librarians
  */
-public class LibrarianFrameCatalogCard implements ActionListener {
-    private final JPanel catalogCard;
+public class LibrarianFrameMemberCard implements ActionListener {
+    private final JPanel membersCard;
     private JButton searchButton;
     private JTextField searchBox;
     private DefaultTableModel model;
     private JScrollPane scrollPane;
-    private JTable catalogTable;
+    private JTable membersTable;
 
-    public LibrarianFrameCatalogCard(JPanel catalogCard) {
-        this.catalogCard = catalogCard;
+    public LibrarianFrameMemberCard(JPanel membersCard) {
+        this.membersCard = membersCard;
         this.addCardHeading();
         this.addSearchBox();
         this.addSearchButton();
-        this.addCatalogTable();
+        this.addMembersTable();
         this.addVerticalFiller();
     }
 
     private void addCardHeading() {
-        JLabel catalogLabel = new JLabel("Catalog");
-        catalogLabel.setFont(new Font("FiraMono NerdFonts", Font.BOLD, 30));
-        catalogLabel.setForeground(Color.WHITE);
+        JLabel membersLabel = new JLabel("Members");
+        membersLabel.setFont(new Font("FiraMono NerdFonts", Font.BOLD, 30));
+        membersLabel.setForeground(Color.WHITE);
 
         JLabel libraryIcon = new JLabel(new ImageIcon(ClassLoader.getSystemResource("librarian_label.png")));
 
@@ -41,12 +41,12 @@ public class LibrarianFrameCatalogCard implements ActionListener {
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.insets = new Insets(30, 10, 5, 340);
-        catalogCard.add(catalogLabel, gbc);
+        membersCard.add(membersLabel, gbc);
 
         gbc.gridx = 1;
         gbc.gridy = 0;
         gbc.insets = new Insets(30, 340, 5, 10);
-        catalogCard.add(libraryIcon, gbc);
+        membersCard.add(libraryIcon, gbc);
     }
 
     private void addSearchBox() {
@@ -63,7 +63,7 @@ public class LibrarianFrameCatalogCard implements ActionListener {
         gbc.gridy = 1;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(5, 10, 5, 10);
-        catalogCard.add(searchBox, gbc);
+        membersCard.add(searchBox, gbc);
     }
 
     private void addSearchButton() {
@@ -80,36 +80,35 @@ public class LibrarianFrameCatalogCard implements ActionListener {
         gbc.gridy = 1;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(5, 10, 5, 10);
-        catalogCard.add(searchButton, gbc);
+        membersCard.add(searchButton, gbc);
     }
 
-    private void addCatalogTable() {
+    private void addMembersTable() {
         model = new DefaultTableModel();
 
-        model.addColumn("Title");
-        model.addColumn("Author");
-        model.addColumn("Copies");
+        model.addColumn("Name");
+        model.addColumn("ID");
+        model.addColumn("Books out");
         model.addColumn("Status");
 
-        model.addRow(new Object[]{"Clean Code", "Robert Martin", "5", "Issued"});
-        model.addRow(new Object[]{"Data Structures", "Mark Allen", "2", "Available"});
-        model.addRow(new Object[]{"Clean Code", "Robert Martin", "5", "Issued"});
-        model.addRow(new Object[]{"Data Structures", "Mark Allen", "2", "Available"});
-        model.addRow(new Object[]{"Clean Code", "Robert Martin", "5", "Issued"});
-        model.addRow(new Object[]{"Data Structures", "Mark Allen", "2", "Available"});
+        model.addRow(new Object[]{"Usman Tahir", "STU-001", "0", "Active"});
+        model.addRow(new Object[]{"Bilal Ahmed", "STU-002", "2", "Active"});
+        model.addRow(new Object[]{"Sher Khan", "STU-003", "10", "Overdue"});
 
-        catalogTable = new JTable(model);
+        membersTable = new JTable(model);
 
-        JTableHeader header = catalogTable.getTableHeader();
+        JTableHeader header = membersTable.getTableHeader();
         header.setForeground(Color.WHITE);
         header.setBackground(new Color(0x043029));
         header.setFont(new Font("FiraMono NerdFonts", Font.BOLD, 16));
-        catalogTable.setGridColor(Color.DARK_GRAY);
-        catalogTable.setShowGrid(false);
-        catalogTable.setFont(new Font("FiraMono NerdFonts", Font.PLAIN, 14));
-        catalogTable.setRowHeight(25);
+        membersTable.setGridColor(Color.DARK_GRAY);
+        membersTable.setShowGrid(false);
+        membersTable.setFont(new Font("FiraMono NerdFonts", Font.PLAIN, 14));
+        membersTable.setRowHeight(25);
 
-        catalogTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+        int statusColumn = 3;
+
+        membersTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
                                                            boolean isSelected, boolean hasFocus, int row, int column) {
@@ -119,28 +118,35 @@ public class LibrarianFrameCatalogCard implements ActionListener {
                 label.setBackground(new Color(0x388A7C));
                 label.setOpaque(true);
                 label.setForeground(Color.WHITE);
+
+                if (column == statusColumn) {
+                    label.setBackground((membersTable.getValueAt(row, column).equals("Overdue")) ? (new Color(0xB82323)) : (new Color(0x309912)));
+                    label.setForeground(Color.WHITE);
+                    label.setFont(new Font("FiraMono NerdFont", Font.BOLD, 16));
+                }
+
                 return label;
             }
         });
 
-        catalogTable.setRowHeight(35);
+        membersTable.setRowHeight(35);
 
-        int rowHeight = catalogTable.getRowHeight();
-        int noOfRows = catalogTable.getRowCount();
-        catalogTable.setPreferredScrollableViewportSize(new Dimension(
-                catalogTable.getPreferredSize().width,
+        int rowHeight = membersTable.getRowHeight();
+        int noOfRows = membersTable.getRowCount();
+        membersTable.setPreferredScrollableViewportSize(new Dimension(
+                membersTable.getPreferredSize().width,
                 rowHeight * noOfRows
         ));
 
         GridBagConstraints gbc = new GridBagConstraints();
 
-        scrollPane = new JScrollPane(catalogTable);
+        scrollPane = new JScrollPane(membersTable);
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(5, 10, 5, 10);
-        catalogCard.add(scrollPane, gbc);
+        membersCard.add(scrollPane, gbc);
     }
 
     /**
@@ -152,7 +158,7 @@ public class LibrarianFrameCatalogCard implements ActionListener {
         gbc.gridy = 3;
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.VERTICAL;
-        catalogCard.add(Box.createVerticalGlue(), gbc);
+        membersCard.add(Box.createVerticalGlue(), gbc);
     }
 
     @Override
@@ -162,12 +168,10 @@ public class LibrarianFrameCatalogCard implements ActionListener {
             scrollPane.getViewport().setBackground(new Color(0x212020));
             scrollPane.setBorder(BorderFactory.createEmptyBorder());
 
-            String searchText = searchBox.getText().strip().toUpperCase();
-            System.out.println(searchText);
+            String searchId = searchBox.getText().strip().toUpperCase();
+            System.out.println(searchId);
 
-            model.addRow(new Object[]{"Clean Code", "Robert Martin", "5", "Issued"});
-            model.addRow(new Object[]{"Data Structures", "Mark Allen", "2", "Available"});
-            model.addRow(new Object[]{"Clean Code", "Robert Martin", "5", "Issued"});
+            model.addRow(new Object[]{"Sher Khan", "STU-003", "10", "Overdue"});
         }
     }
 }

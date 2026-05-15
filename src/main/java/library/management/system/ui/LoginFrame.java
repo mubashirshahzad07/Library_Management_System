@@ -1,4 +1,4 @@
-package library.management.system;
+package library.management.system.ui;
 
 import javax.swing.*;
 import java.awt.*;
@@ -6,7 +6,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 /**
- * @since 29 April 2026
+ * @since 15 May 2026
  * Handles the login window
  */
 public class LoginFrame extends JFrame implements ActionListener {
@@ -129,13 +129,23 @@ public class LoginFrame extends JFrame implements ActionListener {
         this.setVisible(true);
     }
 
+    private void selectWindow(String role) {
+        if (role.equals("ADMIN")) {
+            new LibrarianFrame(this); // change this to AdminFrame after completing admin frame
+        } else if (role.equals("LIBRARIAN")) {
+            new LibrarianFrame(this);
+        } else {
+            new StudentFrame(this);
+        }
+    }
+
     @Override
     public void actionPerformed(ActionEvent actionEvent) {
         if (actionEvent.getSource() == signIn) {
             String username = this.username.getText().strip();
             char[] passwordArray = this.password.getPassword();
             String password = new String(passwordArray).strip();
-            String role = (String) this.roles.getSelectedItem();
+            String role = this.roles.getSelectedItem().toString().toUpperCase();
 
             System.out.println("Username = " + username);
             System.out.println("Password = " + password);
@@ -163,7 +173,7 @@ public class LoginFrame extends JFrame implements ActionListener {
                 e.printStackTrace();
             }
 
-            new LibrarianFrame(this);
+            selectWindow(role);
             // end of 1
 
         //    // 2. if the login failed

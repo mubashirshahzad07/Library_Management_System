@@ -1,4 +1,4 @@
-package library.management.system;
+package library.management.system.ui;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -10,7 +10,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 /**
- * @since 03 May 2026
+ * @since 15 May 2026
  * Handles how students can search for the books
  */
 public class StudentFrameSearchBooksCard implements ActionListener {
@@ -91,12 +91,12 @@ public class StudentFrameSearchBooksCard implements ActionListener {
         model.addColumn("Available");
         model.addColumn("");
 
-        model.addRow(new Object[]{"Clean Code", "Robert Martin", "Yes", "Request"});
-        model.addRow(new Object[]{"Data Structures", "Mark Allen", "No", "Request"});
-        model.addRow(new Object[]{"Data Structures", "Mark Allen", "No", "Request"});
-        model.addRow(new Object[]{"Data Structures", "Mark Allen", "No", "Request"});
-        model.addRow(new Object[]{"Data Structures", "Mark Allen", "No", "Request"});
-        model.addRow(new Object[]{"Data Structures", "Mark Allen", "No", "Request"});
+        model.addRow(new Object[]{"Clean Code", "Robert Martin", "Yes", "Borrow"});
+        model.addRow(new Object[]{"Data Structures", "Mark Allen", "No", "Borrow"});
+        model.addRow(new Object[]{"Data Structures", "Mark Allen", "No", "Borrow"});
+        model.addRow(new Object[]{"Data Structures", "Mark Allen", "No", "Borrow"});
+        model.addRow(new Object[]{"Data Structures", "Mark Allen", "No", "Borrow"});
+        model.addRow(new Object[]{"Data Structures", "Mark Allen", "No", "Borrow"});
 
         int buttonColumnIndex = 3;
 
@@ -104,7 +104,7 @@ public class StudentFrameSearchBooksCard implements ActionListener {
             @Override
             public boolean isCellEditable(int row, int column) {
                 if (column == buttonColumnIndex) {
-                    return !this.getValueAt(row, column).toString().equals("Requested");
+                    return !this.getValueAt(row, column).toString().equals("Borrowed");
                 }
                 
                 return super.isCellEditable(row, column);
@@ -154,7 +154,7 @@ public class StudentFrameSearchBooksCard implements ActionListener {
                     public Component getTableCellRendererComponent(JTable table, Object value,
                                                                    boolean isSelected, boolean hasFocus, int row, int column) {
                         button.setText(value.toString());
-                        button.setEnabled(!value.toString().equals("Requested"));
+                        button.setEnabled(!value.toString().equals("Borrowed"));
                         return button;
                     }
                 }
@@ -180,7 +180,7 @@ public class StudentFrameSearchBooksCard implements ActionListener {
                             JOptionPane.showMessageDialog(
                                     null,
                                     "<html><font color='blue'> Book : </font><html> " + bookTitle + "\n" + "<html><font color = 'blue'> Author: </font><html>" + author,
-                                    "Request Confirmed",
+                                    "Book Borrowed",
                                     JOptionPane.INFORMATION_MESSAGE
                                     );
                         });
@@ -190,13 +190,13 @@ public class StudentFrameSearchBooksCard implements ActionListener {
                     public Component getTableCellEditorComponent(JTable table, Object value,
                                                                  boolean isSelected, int row, int column) {
                         currentRow = row;
-                        button.setText("Requested");
+                        button.setText("Borrowed");
                         return button;
                     }
 
                     @Override
                     public Object getCellEditorValue() {
-                        return "Requested";
+                        return "Borrowed";
                     }
                 }
         );
@@ -243,9 +243,9 @@ public class StudentFrameSearchBooksCard implements ActionListener {
             String searchText = searchBox.getText().strip().toUpperCase();
             System.out.println(searchText);
 
-            model.addRow(new Object[] {searchText, "Simon Sinek", "Yes", "Request"});
-            model.addRow(new Object[] {"second", "Simon Sinek", "Yes", "Request"});
-            model.addRow(new Object[] {"third", "Simon Sinek", "Yes", "Request"});
+            model.addRow(new Object[] {searchText, "Simon Sinek", "Yes", "Borrow"});
+            model.addRow(new Object[] {"second", "Simon Sinek", "Yes", "Borrow"});
+            model.addRow(new Object[] {"third", "Simon Sinek", "Yes", "Borrow"});
         }
     }
 }

@@ -1,4 +1,4 @@
-package library.management.system;
+package library.management.system.ui;
 
 import javax.swing.*;
 import java.awt.*;
