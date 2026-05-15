@@ -8,6 +8,7 @@ CREATE TABLE Users (
     username VARCHAR(50) NOT NULL,
     password VARCHAR(50) NOT NULL,
     role ENUM('ADMIN', 'LIBRARIAN', 'STUDENT') NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
     CONSTRAINT uq_username_role UNIQUE (username, role)
 );
 
@@ -19,6 +20,7 @@ CREATE TABLE Books (
     category VARCHAR(50),
     total_copies INT NOT NULL,
     available_copies INT NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
     CONSTRAINT chk_total_copies CHECK (total_copies > 0),
     CONSTRAINT chk_available_copies CHECK (available_copies >= 0),
     CONSTRAINT chk_logic_copies CHECK (available_copies <= total_copies)
@@ -56,7 +58,8 @@ SELECT
 FROM Fines f
 JOIN Users u ON f.user_id = u.user_id
 JOIN Transactions t ON f.transaction_id = t.transaction_id
-JOIN Books b ON t.book_id = b.book_id;
+JOIN Books b ON t.book_id = b.book_id
+WHERE u.is_active = TRUE AND b.is_active = TRUE;
 
 CREATE VIEW student_transaction_history AS
 SELECT
@@ -75,7 +78,7 @@ FROM Transactions t
 JOIN Users u ON t.user_id = u.user_id
 JOIN Books b ON t.book_id = b.book_id
 LEFT JOIN Fines f ON f.transaction_id = t.transaction_id
-WHERE u.role = 'STUDENT';
+WHERE u.role = 'STUDENT' AND u.is_active = TRUE AND b.is_active = TRUE;
 
 CREATE VIEW librarian_issued_books AS
 SELECT
@@ -91,7 +94,7 @@ SELECT
 FROM Transactions t
 JOIN Users u ON t.user_id = u.user_id
 JOIN Books b ON t.book_id = b.book_id
-WHERE t.status = 'ISSUED';
+WHERE t.status = 'ISSUED' AND u.is_active = TRUE AND b.is_active = TRUE;
 
 CREATE VIEW current_overdue_books AS
 SELECT 
@@ -103,7 +106,7 @@ SELECT
 FROM Transactions t
 JOIN Users u ON t.user_id = u.user_id
 JOIN Books b ON t.book_id = b.book_id
-WHERE t.return_date IS NULL AND CURDATE() > t.due_date;
+WHERE t.return_date IS NULL AND CURDATE() > t.due_date AND u.is_active = TRUE AND b.is_active = TRUE;
 
 INSERT INTO Users (name, username, password, role) VALUES
 ('Mubashir Shahzad', 'Mubashir_Librarian', 'admin123', 'LIBRARIAN'),
