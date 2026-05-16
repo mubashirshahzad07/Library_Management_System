@@ -1,5 +1,7 @@
 package library.management.system.ui;
 
+import library.management.system.util.DBConnection;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
@@ -7,9 +9,10 @@ import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.sql.*;
 
 /**
- * @since 15 May 2026
+ * @since 16 May 2026
  * Handles the members window for librarians
  */
 public class LibrarianFrameMemberCard implements ActionListener {
@@ -84,19 +87,37 @@ public class LibrarianFrameMemberCard implements ActionListener {
     }
 
     private void addMembersTable() {
-        model = new DefaultTableModel();
+        model = new DefaultTableModel() {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
 
         model.addColumn("Name");
-        model.addColumn("ID");
+        model.addColumn("Username");
         model.addColumn("Books out");
         model.addColumn("Status");
 
-        model.addRow(new Object[]{"Usman Tahir", "STU-001", "0", "Active"});
-        model.addRow(new Object[]{"Bilal Ahmed", "STU-002", "2", "Active"});
-        model.addRow(new Object[]{"Sher Khan", "STU-003", "10", "Overdue"});
+        populateTable(null);
 
         membersTable = new JTable(model);
+        applyTableStyling();
 
+        scrollPane = new JScrollPane(membersTable);
+        scrollPane.getViewport().setBackground(new Color(0x212020));
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(5, 10, 5, 10);
+        membersCard.add(scrollPane, gbc);
+    }
+
+    private void applyTableStyling() {
         JTableHeader header = membersTable.getTableHeader();
         header.setForeground(Color.WHITE);
         header.setBackground(new Color(0x043029));
@@ -104,10 +125,9 @@ public class LibrarianFrameMemberCard implements ActionListener {
         membersTable.setGridColor(Color.DARK_GRAY);
         membersTable.setShowGrid(false);
         membersTable.setFont(new Font("FiraMono NerdFonts", Font.PLAIN, 14));
-        membersTable.setRowHeight(25);
+        membersTable.setRowHeight(35);
 
         int statusColumn = 3;
-
         membersTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
@@ -120,38 +140,66 @@ public class LibrarianFrameMemberCard implements ActionListener {
                 label.setForeground(Color.WHITE);
 
                 if (column == statusColumn) {
-                    label.setBackground((membersTable.getValueAt(row, column).equals("Overdue")) ? (new Color(0xB82323)) : (new Color(0x309912)));
-                    label.setForeground(Color.WHITE);
+                    String status = value != null ? value.toString() : "";
+                    label.setBackground(status.equals("Overdue")
+                            ? new Color(0xB82323) : new Color(0x309912));
                     label.setFont(new Font("FiraMono NerdFont", Font.BOLD, 16));
                 }
-
                 return label;
             }
         });
-
-        membersTable.setRowHeight(35);
-
-        int rowHeight = membersTable.getRowHeight();
-        int noOfRows = membersTable.getRowCount();
-        membersTable.setPreferredScrollableViewportSize(new Dimension(
-                membersTable.getPreferredSize().width,
-                rowHeight * noOfRows
-        ));
-
-        GridBagConstraints gbc = new GridBagConstraints();
-
-        scrollPane = new JScrollPane(membersTable);
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        gbc.gridwidth = GridBagConstraints.REMAINDER;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(5, 10, 5, 10);
-        membersCard.add(scrollPane, gbc);
     }
 
-    /**
-     * pushes all the elements to the top of the window
-     */
+    private void populateTable(String keyword) {
+        model.setRowCount(0);
+
+        String sql = "SELECT u.name, u.username, " +
+                "    (SELECT COUNT(*) FROM Transactions t WHERE t.user_id = u.user_id AND t.status = 'ISSUED') AS books_out, " +
+                "    CASE WHEN EXISTS (" +
+                "        SELECT 1 FROM Transactions t2 WHERE t2.user_id = u.user_id " +
+                "        AND t2.status = 'ISSUED' AND t2.due_date < CURDATE()) " +
+                "    THEN 'Overdue' ELSE 'Active' END AS status " +
+                "FROM Users u " +
+                "WHERE u.role = 'STUDENT' AND u.is_active = TRUE";
+
+        if (keyword != null && !keyword.isEmpty()) {
+            sql += " AND (LOWER(u.name) LIKE ? OR LOWER(u.username) LIKE ?)";
+        }
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            if (keyword != null && !keyword.isEmpty()) {
+                String pattern = "%" + keyword.toLowerCase() + "%";
+                ps.setString(1, pattern);
+                ps.setString(2, pattern);
+            }
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                model.addRow(new Object[]{
+                        rs.getString("name"),
+                        rs.getString("username"),
+                        rs.getInt("books_out"),
+                        rs.getString("status")
+                });
+            }
+
+            if (model.getRowCount() == 0 && keyword != null && !keyword.isEmpty()) {
+                JOptionPane.showMessageDialog(membersCard, "No members found for: " + keyword,
+                        "Search", JOptionPane.INFORMATION_MESSAGE);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        if (scrollPane != null) {
+            scrollPane.getViewport().setBackground(new Color(0x212020));
+            scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        }
+    }
+
     private void addVerticalFiller() {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
@@ -164,14 +212,8 @@ public class LibrarianFrameMemberCard implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == searchButton) {
-            model.setRowCount(0);
-            scrollPane.getViewport().setBackground(new Color(0x212020));
-            scrollPane.setBorder(BorderFactory.createEmptyBorder());
-
-            String searchId = searchBox.getText().strip().toUpperCase();
-            System.out.println(searchId);
-
-            model.addRow(new Object[]{"Sher Khan", "STU-003", "10", "Overdue"});
+            String keyword = searchBox.getText().strip();
+            populateTable(keyword);
         }
     }
 }

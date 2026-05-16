@@ -11,7 +11,7 @@ public class BookDAO {
 
     // ── Insert a new book ─────────────────────────────────────────────────────
     public boolean insertBook(Book book) {
-        String sql = "INSERT INTO books "
+        String sql = "INSERT INTO Books "
            + "(book_id, isbn, title, author, category, total_copies, available_copies) "
            + "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
@@ -37,7 +37,7 @@ public class BookDAO {
     // ── Fetch all books ───────────────────────────────────────────────────────
     public List<Book> getAllBooks() {
         List<Book> list = new ArrayList<>();
-        String sql = "SELECT * FROM books";
+        String sql = "SELECT * FROM Books";
 
         try (Connection conn = DBConnection.getConnection();
              Statement st = conn.createStatement();
@@ -56,7 +56,7 @@ public class BookDAO {
 
     // ── Find a single book by ID ──────────────────────────────────────────────
     public Book findBookById(int bookId) {
-        String sql = "SELECT * FROM books WHERE book_id = ?";
+        String sql = "SELECT * FROM Books WHERE book_id = ?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -78,7 +78,7 @@ public class BookDAO {
     // ── Search books by title, author, or category ────────────────────────────
     public List<Book> searchBooks(String keyword) {
         List<Book> list = new ArrayList<>();
-        String sql = "SELECT * FROM books "
+        String sql = "SELECT * FROM Books "
                    + "WHERE LOWER(title)    LIKE ? "
                    + "   OR LOWER(author)   LIKE ? "
                    + "   OR LOWER(category) LIKE ?";
@@ -106,7 +106,7 @@ public class BookDAO {
 
     // ── Update an existing book ───────────────────────────────────────────────
     public boolean updateBook(Book book) {
-        String sql = "UPDATE books "
+        String sql = "UPDATE Books "
                    + "SET title = ?, author = ?, category = ?, "
                    + "    total_copies = ?, available_copies = ? "
                    + "WHERE book_id = ?";
@@ -131,7 +131,7 @@ public class BookDAO {
 
     // ── Delete a book ─────────────────────────────────────────────────────────
     public boolean deleteBook(int bookId) {
-        String sql = "DELETE FROM books WHERE book_id = ?";
+        String sql = "DELETE FROM Books WHERE book_id = ?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -147,7 +147,7 @@ public class BookDAO {
 
     // ── Check for duplicate book (same title + author) ────────────────────────
     public Book findByTitleAndAuthor(String title, String author) {
-        String sql = "SELECT * FROM books WHERE LOWER(title) = LOWER(?) AND LOWER(author) = LOWER(?)";
+        String sql = "SELECT * FROM Books WHERE LOWER(title) = LOWER(?) AND LOWER(author) = LOWER(?)";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {

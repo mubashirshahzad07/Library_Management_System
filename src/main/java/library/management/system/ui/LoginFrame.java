@@ -1,5 +1,6 @@
 package library.management.system.ui;
 
+import library.management.system.model.User;
 import library.management.system.service.UserService;
 
 import javax.swing.*;
@@ -131,15 +132,16 @@ public class LoginFrame extends JFrame implements ActionListener {
         this.setVisible(true);
     }
 
-    private void selectWindow(String username, String password, String role) {
+    private void selectWindow(String usernameText, String passwordText, String role) {
         UserService userService = new UserService();
 
+        User user;
         try {
-            userService.login(username, password, role);
-        } catch (RuntimeException e)  {
+            user = userService.login(usernameText, passwordText, role);
+        } catch (RuntimeException e) {
             JOptionPane.showMessageDialog(
                     null,
-                    "<html><font color='red'> Incorrect username or password! </font></html>",
+                    "<html><font color='red'>" + e.getMessage() + "</font></html>",
                     "Login Error",
                     JOptionPane.ERROR_MESSAGE
             );
@@ -155,25 +157,30 @@ public class LoginFrame extends JFrame implements ActionListener {
 
         this.setVisible(false);
 
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         if (role.equalsIgnoreCase("admin")) {
-            new LibrarianFrame(this); // change this to AdminFrame after completing admin frame
+            new LibrarianFrame(this, user); // reuse LibrarianFrame for Admin until AdminFrame is complete
         } else if (role.equalsIgnoreCase("librarian")) {
-            new LibrarianFrame(this);
+            new LibrarianFrame(this, user);
         } else {
-            new StudentFrame(this);
+            new StudentFrame(this, user);
         }
     }
 
     @Override
     public void actionPerformed(ActionEvent actionEvent) {
         if (actionEvent.getSource() == signIn) {
-            String username = this.username.getText().strip();
+            String usernameText = this.username.getText().strip();
             char[] passwordArray = this.password.getPassword();
-            String password = new String(passwordArray).strip();
+            String passwordText = new String(passwordArray).strip();
             String role = (String) this.roles.getSelectedItem();
 
-            System.out.println("Username = " + username);
-            System.out.println("Password = " + password);
+            System.out.println("Username = " + usernameText);
             System.out.println("Role = " + role);
 
             this.username.setText("");
@@ -182,13 +189,18 @@ public class LoginFrame extends JFrame implements ActionListener {
             this.username.setCaretPosition(0);
             roles.setSelectedIndex(0);
 
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            if (usernameText.isEmpty() || passwordText.isEmpty()) {
+                JOptionPane.showMessageDialog(
+                        null,
+                        "<html><font color='red'> Please fill in the username and password </font></html>",
+                        "Login Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+
+                return;
             }
 
-            selectWindow(username, password, role);
+            selectWindow(usernameText, passwordText, role);
         }
     }
 }

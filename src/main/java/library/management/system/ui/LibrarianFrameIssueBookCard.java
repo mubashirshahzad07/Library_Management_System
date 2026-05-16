@@ -1,10 +1,15 @@
 package library.management.system.ui;
 
+import library.management.system.util.DBConnection;
+
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.*;
 
 /**
- * @since 06 May 2026
+ * @since 16 May 2026
  * Handles the issue book window
  */
 public class LibrarianFrameIssueBookCard {
@@ -43,8 +48,8 @@ public class LibrarianFrameIssueBookCard {
         issueBookPanel.setLayout(new GridBagLayout());
         issueBookPanel.setBackground(new Color(0x2E2D2D));
 
-        // member id/ name
-        JLabel memberIdLabel = new JLabel("Member ID/Name");
+        // member username
+        JLabel memberIdLabel = new JLabel("Member Username");
         memberIdLabel.setFont(new Font("FiraMono NerdFont", Font.PLAIN, 14));
         memberIdLabel.setForeground(Color.WHITE);
 
@@ -56,7 +61,7 @@ public class LibrarianFrameIssueBookCard {
         memberIdBox.setFont(new Font("FiraMono NerdFont", Font.BOLD, 15));
         memberIdBox.setPreferredSize(new Dimension(100, 35));
 
-        // book title/ isbn
+        // book title / isbn
         JLabel bookTitleLabel = new JLabel("Book title/ISBN");
         bookTitleLabel.setFont(new Font("FiraMono NerdFont", Font.PLAIN, 14));
         bookTitleLabel.setForeground(Color.WHITE);
@@ -81,6 +86,7 @@ public class LibrarianFrameIssueBookCard {
         issueDateBox.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
         issueDateBox.setFont(new Font("FiraMono NerdFont", Font.BOLD, 15));
         issueDateBox.setPreferredSize(new Dimension(50, 35));
+        issueDateBox.setText(java.time.LocalDate.now().toString());
 
         // due date
         JLabel dueDateLabel = new JLabel("Due date     ");
@@ -94,15 +100,50 @@ public class LibrarianFrameIssueBookCard {
         dueDateBox.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
         dueDateBox.setFont(new Font("FiraMono NerdFont", Font.BOLD, 15));
         dueDateBox.setPreferredSize(new Dimension(50, 35));
+        dueDateBox.setText(java.time.LocalDate.now().plusDays(14).toString());
 
-        // issue book
+        // issue book button
         JButton issueBookButton = new JButton("Issue book");
-        issueBookButton.setFont(new Font("FiraMono NerdFont", Font.PLAIN, 14));
+        issueBookButton.setFont(new Font("FiraMono NerdFont", Font.BOLD, 15));
         issueBookButton.setForeground(Color.WHITE);
         issueBookButton.setBackground(Color.DARK_GRAY);
-        issueBookButton.setForeground(Color.WHITE);
-        issueBookButton.setFont(new Font("FiraMono NerdFont", Font.BOLD, 15));
         issueBookButton.setFocusable(false);
+
+        issueBookButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String memberUsername = memberIdBox.getText().strip();
+                String bookQuery = bookTitleBox.getText().strip();
+                String issueDateStr = issueDateBox.getText().strip();
+                String dueDateStr = dueDateBox.getText().strip();
+
+                if (memberUsername.isEmpty() || bookQuery.isEmpty() || issueDateStr.isEmpty() || dueDateStr.isEmpty()) {
+                    JOptionPane.showMessageDialog(issueBookCard, "All fields are required.", "Validation", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                try {
+                    Date issueDate = Date.valueOf(issueDateStr);
+                    Date dueDate = Date.valueOf(dueDateStr);
+
+                    if (dueDate.before(issueDate)) {
+                        JOptionPane.showMessageDialog(issueBookCard, "Due date cannot be before issue date.", "Validation", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+
+                    issueBook(memberUsername, bookQuery, issueDate, dueDate);
+
+                    memberIdBox.setText("");
+                    bookTitleBox.setText("");
+                    issueDateBox.setText(java.time.LocalDate.now().toString());
+                    dueDateBox.setText(java.time.LocalDate.now().plusDays(14).toString());
+
+                } catch (IllegalArgumentException ex) {
+                    JOptionPane.showMessageDialog(issueBookCard,
+                            "Invalid date format. Use YYYY-MM-DD.", "Validation", JOptionPane.WARNING_MESSAGE);
+                }
+            }
+        });
 
         GridBagConstraints gbcIssueBook;
 
@@ -188,8 +229,95 @@ public class LibrarianFrameIssueBookCard {
     }
 
     /**
-     * pushes all the elements to the top of the window
+     * Inserts a Transaction row and decrements available_copies on the book.
+     * Accepts book title or ISBN as bookQuery.
      */
+    private void issueBook(String memberUsername, String bookQuery, Date issueDate, Date dueDate) {
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+
+            // 1. Resolve student user_id
+            int userId = -1;
+            String userSql = "SELECT user_id FROM Users WHERE username = ? AND role = 'STUDENT' AND is_active = TRUE";
+            try (PreparedStatement ps = conn.prepareStatement(userSql)) {
+                ps.setString(1, memberUsername);
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) userId = rs.getInt("user_id");
+            }
+            if (userId == -1) {
+                JOptionPane.showMessageDialog(issueBookCard, "Student not found: " + memberUsername,
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                conn.rollback();
+                return;
+            }
+
+            int bookId = -1;
+            String bookSql = "SELECT book_id, available_copies FROM Books WHERE (LOWER(title) LIKE ? OR isbn = ?) AND is_active = TRUE";
+            try (PreparedStatement ps = conn.prepareStatement(bookSql)) {
+                ps.setString(1, "%" + bookQuery.toLowerCase() + "%");
+                ps.setString(2, bookQuery);
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) {
+                    int available = rs.getInt("available_copies");
+                    if (available <= 0) {
+                        JOptionPane.showMessageDialog(issueBookCard,
+                                "No copies available for: " + bookQuery,
+                                "Unavailable", JOptionPane.WARNING_MESSAGE);
+                        conn.rollback();
+                        return;
+                    }
+                    bookId = rs.getInt("book_id");
+                }
+            }
+            if (bookId == -1) {
+                JOptionPane.showMessageDialog(issueBookCard, "Book not found: " + bookQuery,
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                conn.rollback();
+                return;
+            }
+
+            String dupSql = "SELECT 1 FROM Transactions WHERE user_id = ? AND book_id = ? AND status = 'ISSUED'";
+            try (PreparedStatement ps = conn.prepareStatement(dupSql)) {
+                ps.setInt(1, userId);
+                ps.setInt(2, bookId);
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) {
+                    JOptionPane.showMessageDialog(issueBookCard,
+                            "This student already has this book issued.",
+                            "Duplicate", JOptionPane.WARNING_MESSAGE);
+                    conn.rollback();
+                    return;
+                }
+            }
+
+            String tranSql = "INSERT INTO Transactions (user_id, book_id, issue_date, due_date, status) VALUES (?, ?, ?, ?, 'ISSUED')";
+            try (PreparedStatement ps = conn.prepareStatement(tranSql)) {
+                ps.setInt(1, userId);
+                ps.setInt(2, bookId);
+                ps.setDate(3, issueDate);
+                ps.setDate(4, dueDate);
+                ps.executeUpdate();
+            }
+
+            String updateBook = "UPDATE Books SET available_copies = available_copies - 1 WHERE book_id = ?";
+            try (PreparedStatement ps = conn.prepareStatement(updateBook)) {
+                ps.setInt(1, bookId);
+                ps.executeUpdate();
+            }
+
+            conn.commit();
+
+            JOptionPane.showMessageDialog(issueBookCard,
+                    "<html><font color='green'>Book issued successfully!</font></html>",
+                    "Success", JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(issueBookCard, "Database error: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
     private void addVerticalFiller() {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;

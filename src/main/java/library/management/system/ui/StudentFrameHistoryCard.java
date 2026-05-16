@@ -1,10 +1,14 @@
 package library.management.system.ui;
 
+import library.management.system.model.User;
+import library.management.system.util.DBConnection;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
+import java.sql.*;
 
 /**
  * @since 03 May 2026
@@ -12,9 +16,11 @@ import java.awt.*;
  */
 public class StudentFrameHistoryCard {
     private final JPanel historyCard;
+    private final int userId;
 
-    public StudentFrameHistoryCard(JPanel historyCard) {
+    public StudentFrameHistoryCard(JPanel historyCard, User user) {
         this.historyCard = historyCard;
+        this.userId = user.getUserId();
         this.addCardHeading();
         this.addHistoryTable();
         this.addVerticalFiller();
@@ -42,16 +48,39 @@ public class StudentFrameHistoryCard {
     }
 
     private void addHistoryTable() {
-        DefaultTableModel model = new DefaultTableModel();
+        DefaultTableModel model = new DefaultTableModel() {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
 
         model.addColumn("Book");
         model.addColumn("Issued");
         model.addColumn("Returned");
         model.addColumn("Fine");
 
-        model.addRow(new Object[]{"Data Structures", "Mar 1", "Apr 25", "–"});
-        model.addRow(new Object[]{"Data Structures", "Mar 1", "Apr 25", "–"});
-        model.addRow(new Object[]{"Data Structures", "Mar 1", "Apr 25", "–"});
+        String sql = "SELECT book_title, issue_date, return_date, " +
+                "COALESCE(fine_amount, 0) AS fine_amount " +
+                "FROM student_transaction_history " +
+                "WHERE user_id = ? AND status = 'RETURNED' " +
+                "ORDER BY return_date DESC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                double fine = rs.getDouble("fine_amount");
+                model.addRow(new Object[]{
+                        rs.getString("book_title"),
+                        rs.getDate("issue_date").toString(),
+                        rs.getDate("return_date").toString(),
+                        fine > 0 ? "Rs " + (int) fine : "\u2013"
+                });
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
 
         JTable historyTable = new JTable(model);
         JTableHeader header = historyTable.getTableHeader();
@@ -78,15 +107,16 @@ public class StudentFrameHistoryCard {
         });
 
         int rowHeight = historyTable.getRowHeight();
-        int noOfRows = historyTable.getRowCount();
+        int noOfRows = Math.max(historyTable.getRowCount(), 1);
         historyTable.setPreferredScrollableViewportSize(new Dimension(
                 historyTable.getPreferredSize().width,
                 rowHeight * noOfRows
         ));
 
         GridBagConstraints gbc = new GridBagConstraints();
-
         JScrollPane scrollPane = new JScrollPane(historyTable);
+        scrollPane.getViewport().setBackground(new Color(0x212020));
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -95,9 +125,6 @@ public class StudentFrameHistoryCard {
         historyCard.add(scrollPane, gbc);
     }
 
-    /**
-     * pushes all the elements to the top of the window
-     */
     private void addVerticalFiller() {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
