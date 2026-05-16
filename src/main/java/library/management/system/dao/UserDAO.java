@@ -47,4 +47,45 @@ public class UserDAO {
         
         return null;
     }
+    
+    // add new user
+    public void addUser(String name, String username, String password, String role) {
+        
+        String sql = "INSERT INTO Users (name, username, password, role) VALUES (?, ?, ?, ?)";
+        
+        try (
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+            stmt.setString(1, name);
+            stmt.setString(2, username);
+            stmt.setString(3, password);
+            stmt.setString(4, role);
+            
+            stmt.executeUpdate();
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Username already exists for this role");
+        }
+    }
+    
+    // deactivate existing user
+    public void deactivateUser(int userId) {
+        
+        String sql = "UPDATE Users SET is_active = FALSE WHERE user_id = ?";
+        
+        try (
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+            stmt.setInt(1, userId);
+            
+            stmt.executeUpdate();
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to deactivate user");
+        }
+    }
 }

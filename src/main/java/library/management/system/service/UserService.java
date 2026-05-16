@@ -21,4 +21,16 @@ public class UserService {
         
         return user;
     }
+    
+    // add user
+    public void addUser(String name, String username, String password, String role) {
+        
+        userDAO.addUser(name, username, password, role);
+    }
+    
+    // deactivate user
+    public void deactivateUser(int userId) {
+        
+        userDAO.deactivateUser(userId);
+    }
 }
