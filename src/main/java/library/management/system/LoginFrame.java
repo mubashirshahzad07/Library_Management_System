@@ -20,7 +20,7 @@ public class LoginFrame extends JFrame implements ActionListener {
         int screenWidth = (int) screenSize.getWidth();
         int screenHeight = (int) screenSize.getHeight();
 
-        ImageIcon originalImage = new ImageIcon(ClassLoader.getSystemResource("library_background.jpg"));
+       ImageIcon originalImage = new ImageIcon(ClassLoader.getSystemResource("library_background.jpg"));
         int backgroundImageWidth = 2 * (screenWidth / 3);
         int backgroundImageHeight = 2 * (screenHeight / 3);
         Image scaledImage = originalImage.getImage().getScaledInstance(backgroundImageWidth, backgroundImageHeight, Image.SCALE_SMOOTH);

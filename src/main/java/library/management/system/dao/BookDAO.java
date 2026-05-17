@@ -1,5 +1,6 @@
 package library.management.system.dao;
 
+import library.management.system.dto.BookTableDTO;
 import library.management.system.model.Book;
 import library.management.system.util.DBConnection;
 
@@ -12,14 +13,14 @@ public class BookDAO {
     // ── Insert a new book ─────────────────────────────────────────────────────
     public boolean insertBook(Book book) {
         String sql = "INSERT INTO books "
-           + "(book_id, isbn, title, author, category, total_copies, available_copies) "
-           + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+                + "(book_id, isbn, title, author, category, total_copies, available_copies) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt   (1, book.getBookId());
-            ps.setString(2, book.getIsbn());      
+            ps.setString(2, book.getIsbn());
             ps.setString(3, book.getTitle());
             ps.setString(4, book.getAuthor());
             ps.setString(5, book.getCategory());
@@ -34,10 +35,10 @@ public class BookDAO {
         }
     }
 
-    // ── Fetch all books ───────────────────────────────────────────────────────
+    // ── Fetch all active books  ──────────────────────
     public List<Book> getAllBooks() {
         List<Book> list = new ArrayList<>();
-        String sql = "SELECT * FROM books";
+        String sql = "SELECT * FROM books WHERE is_active = TRUE";
 
         try (Connection conn = DBConnection.getConnection();
              Statement st = conn.createStatement();
@@ -75,26 +76,34 @@ public class BookDAO {
         return null;
     }
 
-    // ── Search books by title, author, or category ────────────────────────────
-    public List<Book> searchBooks(String keyword) {
-        List<Book> list = new ArrayList<>();
+    // ── Search books by keyword (active books only) ───────────────────────────
+    public List<BookTableDTO> searchBooks(String keyword) {
+        List<BookTableDTO> list = new ArrayList<>();
         String sql = "SELECT * FROM books "
-                   + "WHERE LOWER(title)    LIKE ? "
-                   + "   OR LOWER(author)   LIKE ? "
-                   + "   OR LOWER(category) LIKE ?";
+                + "WHERE (CAST(book_id AS CHAR) LIKE ? "
+                + "    OR LOWER(isbn)     LIKE ? "
+                + "    OR LOWER(title)    LIKE ? "
+                + "    OR LOWER(author)   LIKE ? "
+                + "    OR LOWER(category) LIKE ?)";
 
         String pattern = "%" + keyword.toLowerCase() + "%";
+
+        // Extract digits for book_id search
+        String digits = keyword.replaceAll("[^0-9]", "").replaceFirst("^0+", "");
+        String idSearch = digits.isEmpty() ? "%no_numeric_id_provided%" : "%" + digits + "%";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setString(1, pattern);
+            ps.setString(1, idSearch);
             ps.setString(2, pattern);
             ps.setString(3, pattern);
+            ps.setString(4, pattern);
+            ps.setString(5, pattern);
 
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                list.add(mapRow(rs));
+                list.add(mapRowToDTO(rs));
             }
 
         } catch (SQLException e) {
@@ -107,9 +116,9 @@ public class BookDAO {
     // ── Update an existing book ───────────────────────────────────────────────
     public boolean updateBook(Book book) {
         String sql = "UPDATE books "
-                   + "SET title = ?, author = ?, category = ?, "
-                   + "    total_copies = ?, available_copies = ? "
-                   + "WHERE book_id = ?";
+                + "SET title = ?, author = ?, category = ?, "
+                + "    total_copies = ?, available_copies = ? "
+                + "WHERE book_id = ?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -129,14 +138,16 @@ public class BookDAO {
         }
     }
 
-    // ── Delete a book ─────────────────────────────────────────────────────────
-    public boolean deleteBook(int bookId) {
-        String sql = "DELETE FROM books WHERE book_id = ?";
+    // ── Soft-delete  ──────────────────
+    public boolean setBookActive(int bookId, boolean active) {
+        String sql = "UPDATE books SET is_active = ? WHERE book_id = ?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setInt(1, bookId);
+            ps.setBoolean(1, active);
+            ps.setInt    (2, bookId);
+
             return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
@@ -145,9 +156,31 @@ public class BookDAO {
         }
     }
 
+    // ── Check if a book is active (not soft-deleted) ──────────────────────────
+    public boolean isBookActive(int bookId) {
+        String sql = "SELECT is_active FROM books WHERE book_id = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, bookId);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getBoolean("is_active");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
     // ── Check for duplicate book (same title + author) ────────────────────────
     public Book findByTitleAndAuthor(String title, String author) {
-        String sql = "SELECT * FROM books WHERE LOWER(title) = LOWER(?) AND LOWER(author) = LOWER(?)";
+        String sql = "SELECT * FROM books "
+                + "WHERE LOWER(title) = LOWER(?) AND LOWER(author) = LOWER(?)";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -178,6 +211,20 @@ public class BookDAO {
             rs.getString("category"),
             rs.getInt   ("total_copies"),
             rs.getInt   ("available_copies")
+        );
+    }
+
+    // ── Helper: map a ResultSet row → BookTableDTO object ────────────────────
+    private BookTableDTO mapRowToDTO(ResultSet rs) throws SQLException {
+        return new BookTableDTO(
+            rs.getInt    ("book_id"),
+            rs.getString ("isbn"),
+            rs.getString ("title"),
+            rs.getString ("author"),
+            rs.getString ("category"),
+            rs.getInt    ("total_copies"),
+            rs.getBoolean("is_active"),
+            rs.getInt    ("available_copies")
         );
     }
 }
