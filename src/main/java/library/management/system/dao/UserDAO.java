@@ -145,7 +145,13 @@ public class UserDAO {
             PreparedStatement stmt = conn.prepareStatement(sql)
         ) {
             String search = "%" + keyword + "%";
-            String idSearch = "%" + keyword.replaceAll("[^0-9]", "") + "%";
+            
+            // Extract numbers and strip leading zeros (e.g., "002" -> "2")
+            String digits = keyword.replaceAll("[^0-9]", "").replaceFirst("^0+", "");
+            
+            // If no numbers are present, use a placeholder so it doesn't bypass other OR checks with '%%'
+            String idSearch = digits.isEmpty() ? "%no_numeric_id_provided%" : "%" + digits + "%";
+            
             String lowerKeyword = keyword.toLowerCase();
             
             stmt.setString(1, idSearch);
