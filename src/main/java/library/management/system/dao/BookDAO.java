@@ -136,23 +136,25 @@ public class BookDAO {
         }
     }
 
-    // ── Delete a book ─────────────────────────────────────────────────────────
-    public boolean deleteBook(int bookId) {
-        String sql = "DELETE FROM Books WHERE book_id = ?";
-
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setBoolean(1, active);
-            ps.setInt    (2, bookId);
-
-            return ps.executeUpdate() > 0;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+   // ── Soft-delete a book (set is_active = false) ────────────────────────────
+public boolean deleteBook(int bookId) {
+    if (!isBookActive(bookId)) {
+        return false;
     }
+
+    String sql = "UPDATE Books SET is_active = false WHERE book_id = ?";
+
+    try (Connection conn = DBConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+        ps.setInt(1, bookId);
+        return ps.executeUpdate() > 0;
+
+    } catch (SQLException e) {
+        e.printStackTrace();
+        return false;
+    }
+}
 
     // ── Check if a book is active (not soft-deleted) ──────────────────────────
     public boolean isBookActive(int bookId) {
