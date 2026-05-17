@@ -1,4 +1,6 @@
-package library.management.system;
+package library.management.system.ui;
+
+import library.management.system.model.User;
 
 import javax.swing.*;
 import java.awt.*;
@@ -13,7 +15,7 @@ public class StudentFrame extends JFrame implements ActionListener {
        private JPanel dashboardCard, myBooksCard, searchBookCard, historyCard;
        private JFrame loginFrame;
 
-       StudentFrame(JFrame loginFrame) {
+       StudentFrame(JFrame loginFrame, User user) {
               this.loginFrame = loginFrame;
 
               Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -32,7 +34,7 @@ public class StudentFrame extends JFrame implements ActionListener {
 
               ImageIcon studentIcon = new ImageIcon(ClassLoader.getSystemResource("student_icon.png"));
 
-              JLabel studentLabel = new JLabel("Dummy Student");
+              JLabel studentLabel = new JLabel(user.getName());
               studentLabel.setIcon(studentIcon);
               studentLabel.setForeground(Color.WHITE);
               studentLabel.setFont(new Font("FiraMono NerdFonts", Font.BOLD, 18));
@@ -90,40 +92,35 @@ public class StudentFrame extends JFrame implements ActionListener {
               JPanel contentPanel = new JPanel(cardLayout);
               contentPanel.setBackground(Color.BLACK);
 
-              // dashboard card
               dashboardCard = new JPanel(new GridBagLayout());
               dashboardCard.setBackground(new Color(0x212020));
               contentPanel.add(dashboardCard, "DASHBOARD CARD");
-              new StudentFrameDashboardCard(dashboardCard);
+              new StudentFrameDashboardCard(dashboardCard, user);
 
-              // search books card
               searchBookCard = new JPanel(new GridBagLayout());
               searchBookCard.setBackground(new Color(0x212020));
-              new StudentFrameSearchBooksCard(searchBookCard);
+              new StudentFrameSearchBooksCard(searchBookCard, user);
               contentPanel.add(searchBookCard, "SEARCH BOOKS CARD");
 
-              // my books card
               myBooksCard = new JPanel(new GridBagLayout());
               myBooksCard.setBackground(new Color(0x212020));
-              new StudentFrameMyBooksCard(myBooksCard);
+              new StudentFrameMyBooksCard(myBooksCard, user);
               contentPanel.add(myBooksCard, "MY BOOKS CARD");
 
-              // history card
               historyCard = new JPanel(new GridBagLayout());
               historyCard.setBackground(new Color(0x212020));
-              new StudentFrameHistoryCard(historyCard);
+              new StudentFrameHistoryCard(historyCard, user);
               contentPanel.add(historyCard, "HISTORY CARD");
 
               dashBoard.addActionListener(actionEvent -> cardLayout.show(contentPanel, "DASHBOARD CARD"));
               searchBooks.addActionListener(actionEvent -> cardLayout.show(contentPanel, "SEARCH BOOKS CARD"));
               myBooks.addActionListener(actionEvent -> cardLayout.show(contentPanel, "MY BOOKS CARD"));
               history.addActionListener(actionEvent -> cardLayout.show(contentPanel, "HISTORY CARD"));
-//              signOut.addActionListener(actionEvent -> this.dispose());
               signOut.addActionListener(this);
 
               JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, optionsPanel, contentPanel);
-              splitPane.setPreferredSize(new Dimension(2 * screenWidth/3, 2 * screenHeight/3));
-              splitPane.setDividerLocation((int) ( screenWidth / 5 ));
+              splitPane.setPreferredSize(new Dimension(2 * screenWidth / 3, 2 * screenHeight / 3));
+              splitPane.setDividerLocation((int) (screenWidth / 5));
               splitPane.setDividerSize(0);
 
               this.setTitle("Student");

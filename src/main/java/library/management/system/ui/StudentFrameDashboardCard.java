@@ -1,10 +1,14 @@
-package library.management.system;
+package library.management.system.ui;
+
+import library.management.system.model.User;
+import library.management.system.util.DBConnection;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
+import java.sql.*;
 
 /**
  * @since 03 May 2026
@@ -12,9 +16,11 @@ import java.awt.*;
  */
 public class StudentFrameDashboardCard {
     private final JPanel dashboardCard;
+    private final int userId;
 
-    public StudentFrameDashboardCard(JPanel dashboardCard) {
+    public StudentFrameDashboardCard(JPanel dashboardCard, User user) {
         this.dashboardCard = dashboardCard;
+        this.userId = user.getUserId();
         this.addCardHeader();
         this.addBooksReturnInformation();
         this.addBooksBorrowedPanel();
@@ -51,17 +57,37 @@ public class StudentFrameDashboardCard {
         booksReturnInformation.setOpaque(true);
         booksReturnInformation.setBorder(BorderFactory.createEmptyBorder(15, 30, 15, 10));
         booksReturnInformation.setFont(new Font("FiraMono NerdFont", Font.PLAIN, 15));
-        booksReturnInformation.setBackground(new Color(0xF0E526));
-        booksReturnInformation.setText("Data Structures is due on Apr 25 ⎯ please return on time.");
 
-        // if student has any overdue book
-        // booksReturnInformation.setForeground(Color.WHITE);
-        // booksReturnInformation.setBackground(new Color(0xF59E0B));
-        // booksReturnInformation.setText(bookTitle + " is overdue since " + dueDate + " ⎯ please return the book immediately.");
-
-        // else find the book with least due time
-        // booksReturnInformation.setText(bookTitle + " is due on " + due date + " ⎯ please return on time.");
-
+        String sql = "SELECT b.title, t.due_date, " +
+                "CASE WHEN t.due_date < CURDATE() THEN 1 ELSE 0 END AS overdue " +
+                "FROM Transactions t JOIN Books b ON t.book_id = b.book_id " +
+                "WHERE t.user_id = ? AND t.status = 'ISSUED' " +
+                "ORDER BY overdue DESC, t.due_date ASC LIMIT 1";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                String title   = rs.getString("title");
+                Date dueDate   = rs.getDate("due_date");
+                boolean overdue = rs.getInt("overdue") == 1;
+                if (overdue) {
+                    booksReturnInformation.setForeground(Color.WHITE);
+                    booksReturnInformation.setBackground(new Color(0xF59E0B));
+                    booksReturnInformation.setText(title + " is overdue since " + dueDate + " \u23AF please return the book immediately.");
+                } else {
+                    booksReturnInformation.setBackground(new Color(0xF0E526));
+                    booksReturnInformation.setText(title + " is due on " + dueDate + " \u23AF please return on time.");
+                }
+            } else {
+                booksReturnInformation.setBackground(new Color(0x29CF45));
+                booksReturnInformation.setText("No books currently issued.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            booksReturnInformation.setBackground(new Color(0xF0E526));
+            booksReturnInformation.setText("Could not load book due date information.");
+        }
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
@@ -71,7 +97,6 @@ public class StudentFrameDashboardCard {
         gbc.gridwidth = GridBagConstraints.REMAINDER;
         gbc.anchor = GridBagConstraints.WEST;
         gbc.insets = new Insets(20, 25, 10, 30);
-
         dashboardCard.add(booksReturnInformation, gbc);
     }
 
@@ -90,8 +115,9 @@ public class StudentFrameDashboardCard {
         gbc.gridy = 0;
         booksBorrowedPanel.add(booksBorrowedLabel, gbc);
 
-        Integer noOfBooksBorrowed = 2; // Shumaail: run SQL query to fetch no of books borrowed
-        JLabel noOfBooksBorrowedLabel = new JLabel(noOfBooksBorrowed.toString()); 
+        int noOfBooksBorrowed = fetchCount(
+                "SELECT COUNT(*) FROM Transactions WHERE user_id = ? AND status = 'ISSUED'");
+        JLabel noOfBooksBorrowedLabel = new JLabel(String.valueOf(noOfBooksBorrowed));
         noOfBooksBorrowedLabel.setFont(new Font("FiraMono NerdFont", Font.BOLD, 25));
         noOfBooksBorrowedLabel.setForeground(Color.WHITE);
         gbc.gridx = 0;
@@ -122,8 +148,9 @@ public class StudentFrameDashboardCard {
         gbc.gridy = 0;
         booksReturnedPanel.add(booksReturnedLabel, gbc);
 
-        Integer noOfBooksReturned = 8; // Shumaail: run SQL query to fetch no of books returned
-        JLabel noOfBooksReturnedLabel = new JLabel(noOfBooksReturned.toString());
+        int noOfBooksReturned = fetchCount(
+                "SELECT COUNT(*) FROM Transactions WHERE user_id = ? AND status = 'RETURNED'");
+        JLabel noOfBooksReturnedLabel = new JLabel(String.valueOf(noOfBooksReturned));
         noOfBooksReturnedLabel.setFont(new Font("FiraMono NerdFont", Font.BOLD, 25));
         noOfBooksReturnedLabel.setForeground(Color.WHITE);
         gbc.gridx = 0;
@@ -155,8 +182,8 @@ public class StudentFrameDashboardCard {
         gbc.anchor = GridBagConstraints.WEST;
         finesPanel.add(finesLabel, gbc);
 
-        Integer fines = 1;
-        JLabel fineAmountLabel = new JLabel("Rs " + fines.toString()); // Shumaail: run SQL query to fetch amount of fines
+        double fineAmount = fetchFineAmount();
+        JLabel fineAmountLabel = new JLabel("Rs " + (int) fineAmount);
         fineAmountLabel.setFont(new Font("FiraMono NerdFont", Font.BOLD, 25));
         fineAmountLabel.setForeground(Color.WHITE);
         gbc.gridx = 0;
@@ -178,7 +205,6 @@ public class StudentFrameDashboardCard {
         currentlyBorrowedLabel.setFont(new Font("FiraMono NerdFonts", Font.PLAIN, 18));
 
         GridBagConstraints gbc = new GridBagConstraints();
-
         gbc.gridx = 0;
         gbc.gridy = 3;
         gbc.anchor = GridBagConstraints.WEST;
@@ -187,21 +213,39 @@ public class StudentFrameDashboardCard {
     }
 
     private void addDashboardTable() {
-        DefaultTableModel model = new DefaultTableModel();
+        DefaultTableModel model = new DefaultTableModel() {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
 
         model.addColumn("Book title");
         model.addColumn("Author");
         model.addColumn("Due date");
         model.addColumn("Status");
 
-        // Shumaail: run SQL query to find books borrowed
-        // add books using for loop or whatever best suits the situation
-        model.addRow(new Object[]{"Data Structures", "Mark Allen", "Apr 25", "Due soon"});
-        model.addRow(new Object[]{"Java Programming", "Herbert Schildt", "May 5", "Issued"});
-        model.addRow(new Object[]{"Data Structures", "Mark Allen", "Apr 25", "Due soon"});
-        model.addRow(new Object[]{"Data Structures", "Mark Allen", "Apr 25", "Due soon"});
-        model.addRow(new Object[]{"Data Structures", "Mark Allen", "Apr 25", "Due soon"});
-        model.addRow(new Object[]{"Data Structures", "Mark Allen", "Apr 25", "Due soon"});
+        String sql = "SELECT b.title, b.author, t.due_date, " +
+                "CASE WHEN t.due_date < CURDATE() THEN 'Overdue' " +
+                "     WHEN DATEDIFF(t.due_date, CURDATE()) <= 3 THEN 'Due soon' " +
+                "     ELSE 'Issued' END AS status " +
+                "FROM Transactions t JOIN Books b ON t.book_id = b.book_id " +
+                "WHERE t.user_id = ? AND t.status = 'ISSUED' ORDER BY t.due_date ASC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                model.addRow(new Object[]{
+                        rs.getString("title"),
+                        rs.getString("author"),
+                        rs.getDate("due_date").toString(),
+                        rs.getString("status")
+                });
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
 
         JTable dashboardTable = new JTable(model);
         JTableHeader header = dashboardTable.getTableHeader();
@@ -228,15 +272,16 @@ public class StudentFrameDashboardCard {
         });
 
         int rowHeight = dashboardTable.getRowHeight();
-        int noOfRows = dashboardTable.getRowCount();
+        int noOfRows = Math.max(dashboardTable.getRowCount(), 1);
         dashboardTable.setPreferredScrollableViewportSize(new Dimension(
                 dashboardTable.getPreferredSize().width,
                 rowHeight * noOfRows
         ));
 
         GridBagConstraints gbc = new GridBagConstraints();
-
         JScrollPane scrollPane = new JScrollPane(dashboardTable);
+        scrollPane.getViewport().setBackground(new Color(0x212020));
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
         gbc.gridx = 0;
         gbc.gridy = 4;
         gbc.gridwidth = GridBagConstraints.REMAINDER;
@@ -245,9 +290,6 @@ public class StudentFrameDashboardCard {
         dashboardCard.add(scrollPane, gbc);
     }
 
-    /**
-     * pushes all the elements to the top of the window
-     */
     private void addVerticalFiller() {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
@@ -255,5 +297,30 @@ public class StudentFrameDashboardCard {
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.VERTICAL;
         dashboardCard.add(Box.createVerticalGlue(), gbc);
+    }
+
+    private int fetchCount(String sql) {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    private double fetchFineAmount() {
+        String sql = "SELECT COALESCE(SUM(fine_amount), 0) FROM Fines WHERE user_id = ? AND payment_status = 'UNPAID'";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getDouble(1);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
     }
 }

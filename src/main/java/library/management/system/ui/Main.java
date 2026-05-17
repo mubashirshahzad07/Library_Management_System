@@ -1,4 +1,4 @@
-package library.management.system;
+package library.management.system.ui;
 
 /**
  * @since 29 April 2026

@@ -1,4 +1,7 @@
-package library.management.system;
+package library.management.system.ui;
+
+import library.management.system.model.Book;
+import library.management.system.service.BookService;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -7,9 +10,10 @@ import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.List;
 
 /**
- * @since 06 May 2026
+ * @since 16 May 2026
  * Handles the catalog window for librarians
  */
 public class LibrarianFrameCatalogCard implements ActionListener {
@@ -19,6 +23,8 @@ public class LibrarianFrameCatalogCard implements ActionListener {
     private DefaultTableModel model;
     private JScrollPane scrollPane;
     private JTable catalogTable;
+
+    private final BookService bookService = new BookService();
 
     public LibrarianFrameCatalogCard(JPanel catalogCard) {
         this.catalogCard = catalogCard;
@@ -84,22 +90,38 @@ public class LibrarianFrameCatalogCard implements ActionListener {
     }
 
     private void addCatalogTable() {
-        model = new DefaultTableModel();
+        model = new DefaultTableModel() {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
 
         model.addColumn("Title");
         model.addColumn("Author");
         model.addColumn("Copies");
         model.addColumn("Status");
 
-        model.addRow(new Object[]{"Clean Code", "Robert Martin", "5", "Issued"});
-        model.addRow(new Object[]{"Data Structures", "Mark Allen", "2", "Available"});
-        model.addRow(new Object[]{"Clean Code", "Robert Martin", "5", "Issued"});
-        model.addRow(new Object[]{"Data Structures", "Mark Allen", "2", "Available"});
-        model.addRow(new Object[]{"Clean Code", "Robert Martin", "5", "Issued"});
-        model.addRow(new Object[]{"Data Structures", "Mark Allen", "2", "Available"});
+        // Load all books on startup
+        populateTable(null);
 
         catalogTable = new JTable(model);
+        applyTableStyling();
 
+        scrollPane = new JScrollPane(catalogTable);
+        scrollPane.getViewport().setBackground(new Color(0x212020));
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(5, 10, 5, 10);
+        catalogCard.add(scrollPane, gbc);
+    }
+
+    private void applyTableStyling() {
         JTableHeader header = catalogTable.getTableHeader();
         header.setForeground(Color.WHITE);
         header.setBackground(new Color(0x043029));
@@ -107,8 +129,9 @@ public class LibrarianFrameCatalogCard implements ActionListener {
         catalogTable.setGridColor(Color.DARK_GRAY);
         catalogTable.setShowGrid(false);
         catalogTable.setFont(new Font("FiraMono NerdFonts", Font.PLAIN, 14));
-        catalogTable.setRowHeight(25);
+        catalogTable.setRowHeight(35);
 
+        int statusColumn = 3;
         catalogTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
@@ -119,33 +142,39 @@ public class LibrarianFrameCatalogCard implements ActionListener {
                 label.setBackground(new Color(0x388A7C));
                 label.setOpaque(true);
                 label.setForeground(Color.WHITE);
+
+                if (column == statusColumn) {
+                    String status = value != null ? value.toString() : "";
+                    label.setBackground(status.equals("Unavailable")
+                            ? new Color(0xB82323) : new Color(0x309912));
+                    label.setFont(new Font("FiraMono NerdFont", Font.BOLD, 16));
+                }
                 return label;
             }
         });
-
-        catalogTable.setRowHeight(35);
-
-        int rowHeight = catalogTable.getRowHeight();
-        int noOfRows = catalogTable.getRowCount();
-        catalogTable.setPreferredScrollableViewportSize(new Dimension(
-                catalogTable.getPreferredSize().width,
-                rowHeight * noOfRows
-        ));
-
-        GridBagConstraints gbc = new GridBagConstraints();
-
-        scrollPane = new JScrollPane(catalogTable);
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        gbc.gridwidth = GridBagConstraints.REMAINDER;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(5, 10, 5, 10);
-        catalogCard.add(scrollPane, gbc);
     }
 
-    /**
-     * pushes all the elements to the top of the window
-     */
+    private void populateTable(String keyword) {
+        model.setRowCount(0);
+        try {
+            List<Book> books = (keyword == null || keyword.isEmpty())
+                    ? bookService.getAllBooks()
+                    : bookService.searchBooks(keyword);
+
+            for (Book b : books) {
+                String status = b.getAvailableCopies() > 0 ? "Available" : "Unavailable";
+                model.addRow(new Object[]{b.getTitle(), b.getAuthor(), b.getAvailableCopies(), status});
+            }
+        } catch (RuntimeException e) {
+            JOptionPane.showMessageDialog(catalogCard, e.getMessage(), "Search", JOptionPane.INFORMATION_MESSAGE);
+        }
+
+        if (scrollPane != null) {
+            scrollPane.getViewport().setBackground(new Color(0x212020));
+            scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        }
+    }
+
     private void addVerticalFiller() {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
@@ -158,16 +187,8 @@ public class LibrarianFrameCatalogCard implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == searchButton) {
-            model.setRowCount(0);
-            scrollPane.getViewport().setBackground(new Color(0x212020));
-            scrollPane.setBorder(BorderFactory.createEmptyBorder());
-
-            String searchText = searchBox.getText().strip().toUpperCase();
-            System.out.println(searchText);
-
-            model.addRow(new Object[]{"Clean Code", "Robert Martin", "5", "Issued"});
-            model.addRow(new Object[]{"Data Structures", "Mark Allen", "2", "Available"});
-            model.addRow(new Object[]{"Clean Code", "Robert Martin", "5", "Issued"});
+            String keyword = searchBox.getText().strip();
+            populateTable(keyword);
         }
     }
 }

@@ -12,9 +12,9 @@ public class BookDAO {
 
     // ── Insert a new book ─────────────────────────────────────────────────────
     public boolean insertBook(Book book) {
-        String sql = "INSERT INTO books "
-                + "(book_id, isbn, title, author, category, total_copies, available_copies) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO Books "
+           + "(book_id, isbn, title, author, category, total_copies, available_copies) "
+           + "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -38,7 +38,7 @@ public class BookDAO {
     // ── Fetch all active books  ──────────────────────
     public List<Book> getAllBooks() {
         List<Book> list = new ArrayList<>();
-        String sql = "SELECT * FROM books WHERE is_active = TRUE";
+        String sql = "SELECT * FROM Books";
 
         try (Connection conn = DBConnection.getConnection();
              Statement st = conn.createStatement();
@@ -57,7 +57,7 @@ public class BookDAO {
 
     // ── Find a single book by ID ──────────────────────────────────────────────
     public Book findBookById(int bookId) {
-        String sql = "SELECT * FROM books WHERE book_id = ?";
+        String sql = "SELECT * FROM Books WHERE book_id = ?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -76,15 +76,13 @@ public class BookDAO {
         return null;
     }
 
-    // ── Search books by keyword (active books only) ───────────────────────────
-    public List<BookTableDTO> searchBooks(String keyword) {
-        List<BookTableDTO> list = new ArrayList<>();
-        String sql = "SELECT * FROM books "
-                + "WHERE (CAST(book_id AS CHAR) LIKE ? "
-                + "    OR LOWER(isbn)     LIKE ? "
-                + "    OR LOWER(title)    LIKE ? "
-                + "    OR LOWER(author)   LIKE ? "
-                + "    OR LOWER(category) LIKE ?)";
+    // ── Search books by title, author, or category ────────────────────────────
+    public List<Book> searchBooks(String keyword) {
+        List<Book> list = new ArrayList<>();
+        String sql = "SELECT * FROM Books "
+                   + "WHERE LOWER(title)    LIKE ? "
+                   + "   OR LOWER(author)   LIKE ? "
+                   + "   OR LOWER(category) LIKE ?";
 
         String pattern = "%" + keyword.toLowerCase() + "%";
 
@@ -115,10 +113,10 @@ public class BookDAO {
 
     // ── Update an existing book ───────────────────────────────────────────────
     public boolean updateBook(Book book) {
-        String sql = "UPDATE books "
-                + "SET title = ?, author = ?, category = ?, "
-                + "    total_copies = ?, available_copies = ? "
-                + "WHERE book_id = ?";
+        String sql = "UPDATE Books "
+                   + "SET title = ?, author = ?, category = ?, "
+                   + "    total_copies = ?, available_copies = ? "
+                   + "WHERE book_id = ?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -138,9 +136,9 @@ public class BookDAO {
         }
     }
 
-    // ── Soft-delete  ──────────────────
-    public boolean setBookActive(int bookId, boolean active) {
-        String sql = "UPDATE books SET is_active = ? WHERE book_id = ?";
+    // ── Delete a book ─────────────────────────────────────────────────────────
+    public boolean deleteBook(int bookId) {
+        String sql = "DELETE FROM Books WHERE book_id = ?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -179,8 +177,7 @@ public class BookDAO {
 
     // ── Check for duplicate book (same title + author) ────────────────────────
     public Book findByTitleAndAuthor(String title, String author) {
-        String sql = "SELECT * FROM books "
-                + "WHERE LOWER(title) = LOWER(?) AND LOWER(author) = LOWER(?)";
+        String sql = "SELECT * FROM Books WHERE LOWER(title) = LOWER(?) AND LOWER(author) = LOWER(?)";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {

@@ -1,4 +1,6 @@
-package library.management.system;
+package library.management.system.ui;
+
+import library.management.system.model.User;
 
 import javax.swing.*;
 import java.awt.*;
@@ -13,7 +15,7 @@ public class LibrarianFrame extends JFrame implements ActionListener {
     private JPanel dashboardCard, issueBookCard, returnBookCard, catalogCard, membersCard;
     private JFrame loginFrame;
 
-    LibrarianFrame(JFrame loginFrame) {
+    LibrarianFrame(JFrame loginFrame, User user) {
         this.loginFrame = loginFrame;
 
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -32,7 +34,8 @@ public class LibrarianFrame extends JFrame implements ActionListener {
 
         ImageIcon librarianIcon = new ImageIcon(ClassLoader.getSystemResource("librarian_icon.png"));
 
-        JLabel librarianLabel = new JLabel("Dummy Librarian");
+        // Display the logged-in user's real name
+        JLabel librarianLabel = new JLabel(user.getName());
         librarianLabel.setIcon(librarianIcon);
         librarianLabel.setForeground(Color.WHITE);
         librarianLabel.setFont(new Font("FiraMono NerdFonts", Font.BOLD, 18));
@@ -141,8 +144,8 @@ public class LibrarianFrame extends JFrame implements ActionListener {
         signOut.addActionListener(this);
 
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, optionsPanel, contentPanel);
-        splitPane.setPreferredSize(new Dimension(2 * screenWidth/3, 2 * screenHeight/3));
-        splitPane.setDividerLocation((int) ( screenWidth / 5 ));
+        splitPane.setPreferredSize(new Dimension(2 * screenWidth / 3, 2 * screenHeight / 3));
+        splitPane.setDividerLocation((int) (screenWidth / 5));
         splitPane.setDividerSize(0);
 
         this.setTitle("Librarian");
