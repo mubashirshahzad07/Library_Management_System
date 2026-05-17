@@ -4,12 +4,15 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.ArrayList;
 
 import library.management.system.model.User;
 import library.management.system.model.Admin;
 import library.management.system.model.Librarian;
 import library.management.system.model.Student;
 import library.management.system.util.DBConnection;
+import library.management.system.dto.UserTableDTO;
 
 public class UserDAO {
     
@@ -87,5 +90,88 @@ public class UserDAO {
             e.printStackTrace();
             throw new RuntimeException("Failed to deactivate user");
         }
+    }
+    
+    // return list of all users
+    public List<UserTableDTO> getAllUsers() {
+        
+        List<UserTableDTO> users = new ArrayList<>();
+        
+        String sql = "SELECT user_id, name, username, role, is_active FROM User";
+        
+        try (
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery()
+        ) {
+            while (rs.next()) {
+                UserTableDTO user = new UserTableDTO(
+                        rs.getInt("user_id"),
+                        rs.getString("name"),
+                        rs.getString("username"),
+                        rs.getString("role"),
+                        rs.getBoolean("is_active")
+                );
+                
+                users.add(user);
+            }
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to load users");
+        }
+         
+        return users;
+    }
+    
+    // search for users based on keyword
+    public List<UserTableDTO> searchUsers(String keyword) {
+        
+        List<UserTableDTO> users = new ArrayList<>();
+        
+        String sql = """
+           SELECT user_id, name, username, role, is_active 
+           FROM Users 
+           WHERE CAST(user_id AS CHAR) LIKE ?
+           OR name LIKE ?
+           OR username LIKE ?
+           OR role LIKE ?
+           OR (? = 'active' AND is_active = TRUE)
+           OR (? = 'inactive' AND is_active = FALSE)
+        """;
+        
+        try (
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+            String search = "%" + keyword + "%";
+            String idSearch = "%" + keyword.replaceAll("[^0-9]", "") + "%";
+            String lowerKeyword = keyword.toLowerCase();
+            
+            stmt.setString(1, idSearch);
+            stmt.setString(2, keyword);
+            stmt.setString(3, keyword);
+            stmt.setString(4, keyword);
+            stmt.setString(5, lowerKeyword);
+            stmt.setString(6, lowerKeyword);
+            
+            ResultSet rs = stmt.executeQuery();
+            
+            while (rs.next()) {
+                UserTableDTO user = new UserTableDTO(
+                        rs.getInt("user_id"),
+                        rs.getString("name"),
+                        rs.getString("username"),
+                        rs.getString("role"),
+                        rs.getBoolean("is_active")
+                );
+                
+                users.add(user);
+            }
+        } catch (SQLException e) {
+            
+        }
+        
+        return users;
     }
 }

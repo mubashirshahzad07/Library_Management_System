@@ -1,12 +1,16 @@
 package library.management.system.service;
+
+import java.util.List;
         
 import library.management.system.dao.UserDAO;
 import library.management.system.model.User;
+import library.management.system.dto.UserTableDTO;
 
 public class UserService {
         
     private UserDAO userDAO = new UserDAO();
     
+    // login logic
     public User login(String username, String password, String selectedRole) {
         
         User user = userDAO.findByUsernameAndRole(username, selectedRole);
@@ -32,5 +36,10 @@ public class UserService {
     public void deactivateUser(int userId) {
         
         userDAO.deactivateUser(userId);
+    }
+    
+    // return all users
+    public List<UserTableDTO> getAllUsers() {
+        return userDAO.getAllUsers();
     }
 }
