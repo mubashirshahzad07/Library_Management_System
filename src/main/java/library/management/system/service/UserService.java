@@ -42,4 +42,9 @@ public class UserService {
     public List<UserTableDTO> getAllUsers() {
         return userDAO.getAllUsers();
     }
+    
+    // search for users based on keyword
+    public List<UserTableDTO> searchUsers(String keyword) {
+        return userDAO.searchUsers(keyword);
+    }
 }

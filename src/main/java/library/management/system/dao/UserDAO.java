@@ -97,7 +97,7 @@ public class UserDAO {
         
         List<UserTableDTO> users = new ArrayList<>();
         
-        String sql = "SELECT user_id, name, username, role, is_active FROM User";
+        String sql = "SELECT user_id, name, username, role, is_active FROM Users";
         
         try (
             Connection conn = DBConnection.getConnection();
@@ -136,8 +136,8 @@ public class UserDAO {
            OR name LIKE ?
            OR username LIKE ?
            OR role LIKE ?
-           OR (? = 'active' AND is_active = TRUE)
            OR (? = 'inactive' AND is_active = FALSE)
+           OR (? = 'active' AND is_active = TRUE)
         """;
         
         try (
@@ -149,9 +149,9 @@ public class UserDAO {
             String lowerKeyword = keyword.toLowerCase();
             
             stmt.setString(1, idSearch);
-            stmt.setString(2, keyword);
-            stmt.setString(3, keyword);
-            stmt.setString(4, keyword);
+            stmt.setString(2, search);
+            stmt.setString(3, search);
+            stmt.setString(4, search);
             stmt.setString(5, lowerKeyword);
             stmt.setString(6, lowerKeyword);
             
@@ -169,7 +169,8 @@ public class UserDAO {
                 users.add(user);
             }
         } catch (SQLException e) {
-            
+            e.printStackTrace();
+            throw new RuntimeException("Failed to search users");
         }
         
         return users;
