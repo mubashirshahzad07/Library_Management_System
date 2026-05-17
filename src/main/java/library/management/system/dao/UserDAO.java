@@ -93,11 +93,11 @@ public class UserDAO {
     }
     
     // return list of all users
-    public List<UserTableDTO> getAllUsers() {
+    public List<UserTableDTO> getActiveUsers() {
         
         List<UserTableDTO> users = new ArrayList<>();
         
-        String sql = "SELECT user_id, name, username, role, is_active FROM Users";
+        String sql = "SELECT user_id, name, username, role, is_active FROM Users WHERE is_active = TRUE";
         
         try (
             Connection conn = DBConnection.getConnection();
@@ -118,7 +118,7 @@ public class UserDAO {
             
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new RuntimeException("Failed to load users");
+            throw new RuntimeException("Failed to load active users");
         }
          
         return users;
@@ -132,12 +132,13 @@ public class UserDAO {
         String sql = """
            SELECT user_id, name, username, role, is_active 
            FROM Users 
-           WHERE CAST(user_id AS CHAR) LIKE ?
-           OR name LIKE ?
-           OR username LIKE ?
-           OR role LIKE ?
-           OR (? = 'inactive' AND is_active = FALSE)
-           OR (? = 'active' AND is_active = TRUE)
+           WHERE is_active = TRUE 
+           AND (
+                CAST(user_id AS CHAR) LIKE ?
+                OR name LIKE ?
+                OR username LIKE ?
+                OR role LIKE ?
+            )
         """;
         
         try (
@@ -152,14 +153,10 @@ public class UserDAO {
             // If no numbers are present, use a placeholder so it doesn't bypass other OR checks with '%%'
             String idSearch = digits.isEmpty() ? "%no_numeric_id_provided%" : "%" + digits + "%";
             
-            String lowerKeyword = keyword.toLowerCase();
-            
             stmt.setString(1, idSearch);
             stmt.setString(2, search);
             stmt.setString(3, search);
             stmt.setString(4, search);
-            stmt.setString(5, lowerKeyword);
-            stmt.setString(6, lowerKeyword);
             
             ResultSet rs = stmt.executeQuery();
             
@@ -179,6 +176,38 @@ public class UserDAO {
             throw new RuntimeException("Failed to search users");
         }
         
+        return users;
+    }
+    
+    // return all inactive users
+    public List<UserTableDTO> getInactiveUsers() {
+        
+        List<UserTableDTO> users = new ArrayList<>();
+        
+        String sql = "SELECT user_id, name, username, role, is_active FROM Users WHERE is_active = FALSE";
+        
+        try (
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery()
+        ) {
+            while (rs.next()) {
+                UserTableDTO user = new UserTableDTO(
+                        rs.getInt("user_id"),
+                        rs.getString("name"),
+                        rs.getString("username"),
+                        rs.getString("role"),
+                        rs.getBoolean("is_active")
+                );
+                
+                users.add(user);
+            }
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to load inactive users");
+        }
+         
         return users;
     }
 }

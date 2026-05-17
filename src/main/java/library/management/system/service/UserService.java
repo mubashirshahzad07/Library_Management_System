@@ -39,12 +39,17 @@ public class UserService {
     }
     
     // return all users
-    public List<UserTableDTO> getAllUsers() {
-        return userDAO.getAllUsers();
+    public List<UserTableDTO> getActiveUsers() {
+        return userDAO.getActiveUsers();
     }
     
     // search for users based on keyword
     public List<UserTableDTO> searchUsers(String keyword) {
         return userDAO.searchUsers(keyword);
+    }
+    
+    // display all inactive users
+    public List<UserTableDTO> getInactiveUsers() {
+        return userDAO.getInactiveUsers();
     }
 }
