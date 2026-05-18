@@ -1,5 +1,6 @@
 package library.management.system.ui;
 
+import library.management.system.dto.BookTableDTO;
 import library.management.system.model.Book;
 import library.management.system.service.BookService;
 
@@ -99,7 +100,8 @@ public class LibrarianFrameCatalogCard implements ActionListener {
 
         model.addColumn("Title");
         model.addColumn("Author");
-        model.addColumn("Copies");
+        model.addColumn("Total Copies");
+        model.addColumn("Available Copies");
         model.addColumn("Status");
 
         // Load all books on startup
@@ -131,7 +133,7 @@ public class LibrarianFrameCatalogCard implements ActionListener {
         catalogTable.setFont(new Font("FiraMono NerdFonts", Font.PLAIN, 14));
         catalogTable.setRowHeight(35);
 
-        int statusColumn = 3;
+        int statusColumn = 4;
         catalogTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
@@ -157,13 +159,21 @@ public class LibrarianFrameCatalogCard implements ActionListener {
     private void populateTable(String keyword) {
         model.setRowCount(0);
         try {
-            List<Book> books = (keyword == null || keyword.isEmpty())
-                    ? bookService.getAllBooks()
-                    : bookService.searchBooks(keyword);
+            if (keyword == null || keyword.isEmpty()) {
+                List<Book> books = bookService.getAllBooks();
 
-            for (Book b : books) {
-                String status = b.getAvailableCopies() > 0 ? "Available" : "Unavailable";
-                model.addRow(new Object[]{b.getTitle(), b.getAuthor(), b.getAvailableCopies(), status});
+                for (Book b : books) {
+                    String status = b.getAvailableCopies() > 0 ? "Available" : "Unavailable";
+                    model.addRow(new Object[]{b.getTitle(), b.getAuthor(), b.getTotalCopies(), b.getAvailableCopies(), status});
+                }
+
+            } else {
+                List<BookTableDTO> books = bookService.searchBooks(keyword);
+
+                for (BookTableDTO b : books) {
+                    String status = b.getTotalCopies() > 0 ? "Available" : "Unavailable";
+                    model.addRow(new Object[]{b.getTitle(), b.getAuthor(), b.getTotalCopies(), status});
+                }
             }
         } catch (RuntimeException e) {
             JOptionPane.showMessageDialog(catalogCard, e.getMessage(), "Search", JOptionPane.INFORMATION_MESSAGE);
