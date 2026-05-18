@@ -100,7 +100,7 @@ public class LibrarianFrameMemberCard implements ActionListener {
 
         model.addColumn("Name");
         model.addColumn("Username");
-        model.addColumn("Issued Books");
+        model.addColumn("Issued books");
         model.addColumn("Status");
 
         getAllMembers();

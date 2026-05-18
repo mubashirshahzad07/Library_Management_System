@@ -103,8 +103,8 @@ public class StudentFrameMyBooksCard {
             }
         };
 
-        model.addColumn("Book");
-        model.addColumn("Issued");
+        model.addColumn("Book title");
+        model.addColumn("Issue date");
         model.addColumn("Due date");
         model.addColumn("Status");
 

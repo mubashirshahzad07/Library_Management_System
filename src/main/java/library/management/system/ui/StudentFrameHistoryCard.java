@@ -55,9 +55,9 @@ public class StudentFrameHistoryCard {
             }
         };
 
-        model.addColumn("Book");
-        model.addColumn("Issued");
-        model.addColumn("Returned");
+        model.addColumn("Book title");
+        model.addColumn("Issue date");
+        model.addColumn("Return date");
         model.addColumn("Fine");
 
         String sql = "SELECT book_title, issue_date, return_date, " +
