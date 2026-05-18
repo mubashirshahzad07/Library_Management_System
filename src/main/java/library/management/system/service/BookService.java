@@ -3,9 +3,10 @@ package library.management.system.service;
 import library.management.system.dao.BookDAO;
 import library.management.system.dao.TransactionDAO;
 import library.management.system.model.Book;
-import library.management.system.dto.BookTableDTO;
+import library.management.system.dto.*;
 
 import java.util.List;
+import java.util.ArrayList;
 
 public class BookService {
 
@@ -94,4 +95,33 @@ public List<BookTableDTO> searchBooks(String keyword) {
 
     return results;
 }
+
+    // librarian catalog table
+    public List<BookCatalogDTO> getBookCatalog() {
+        return bookDAO.getBookCatalog();
+    }
+    
+    // search librarian catalog
+    public List<BookCatalogDTO> searchBookCatalog(String keyword) {
+  
+        keyword = keyword.trim();
+        
+        // books are searched based on status
+        if (keyword.equalsIgnoreCase("available") || keyword.equalsIgnoreCase("unavailable")) {
+
+            List<BookCatalogDTO> allBooks = bookDAO.getBookCatalog();
+            List<BookCatalogDTO> filteredBooks = new ArrayList<>();
+            
+            // get all books then filter on keyword
+            for (BookCatalogDTO book : allBooks) {                       
+                if (book.getStatus().equalsIgnoreCase(keyword)) {
+                    filteredBooks.add(book);
+                }
+            }
+
+            return filteredBooks;
+        }
+        // if book is searched based on title or author
+        return bookDAO.searchBookCatalog(keyword);
+    }
 }
