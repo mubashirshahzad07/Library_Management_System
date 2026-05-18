@@ -219,7 +219,7 @@ public class TransactionDAO {
     // display transactions for admin
     public List<TransactionReportDTO> getTransactionReports() {
         
-        List<TransactionReportDTO> reports = new ArrayList();
+        List<TransactionReportDTO> reports = new ArrayList<>();
         
         String sql = """
             SELECT 

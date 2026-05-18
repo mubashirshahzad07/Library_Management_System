@@ -63,6 +63,7 @@ WHERE u.is_active = TRUE AND b.is_active = TRUE;
 
 CREATE VIEW student_transaction_history AS
 SELECT
+    t.transaction_id,
     u.user_id,
     u.name,
     u.username,

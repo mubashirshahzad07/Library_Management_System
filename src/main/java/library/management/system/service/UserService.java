@@ -4,7 +4,7 @@ import java.util.List;
         
 import library.management.system.dao.UserDAO;
 import library.management.system.model.User;
-import library.management.system.dto.UserTableDTO;
+import library.management.system.dto.*;
 
 public class UserService {
         
@@ -51,5 +51,15 @@ public class UserService {
     // display all inactive users
     public List<UserTableDTO> getInactiveUsers() {
         return userDAO.getInactiveUsers();
+    }
+    
+    // display users in librarian members table
+    public List<MemberTableDTO> getMemberTableDTO() {
+        return userDAO.getMembersTable();
+    }
+    
+    // search librarian member table
+    public List<MemberTableDTO> searchMemberTable(String keyword) {
+        return userDAO.searchMembers(keyword);
     }
 }
