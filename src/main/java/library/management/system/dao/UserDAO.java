@@ -92,7 +92,7 @@ public class UserDAO {
         }
     }
     
-    // return list of all users
+    // return list of all active users
     public List<UserTableDTO> getActiveUsers() {
         
         List<UserTableDTO> users = new ArrayList<>();
@@ -124,7 +124,7 @@ public class UserDAO {
         return users;
     }
     
-    // search for users based on keyword
+    // search for active users based on keyword
     public List<UserTableDTO> searchUsers(String keyword) {
         
         List<UserTableDTO> users = new ArrayList<>();

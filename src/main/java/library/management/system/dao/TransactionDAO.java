@@ -2,6 +2,7 @@ package library.management.system.dao;
  
 import library.management.system.model.Transaction;
 import library.management.system.util.DBConnection;
+import library.management.system.dto.TransactionReportDTO;
  
 import java.sql.*;
 import java.util.ArrayList;
@@ -214,5 +215,107 @@ public class TransactionDAO {
             rs.getString("status")
         );
     }
+    
+    // display transactions for admin
+    public List<TransactionReportDTO> getTransactionReports() {
+        
+        List<TransactionReportDTO> reports = new ArrayList();
+        
+        String sql = """
+            SELECT 
+                transaction_id, 
+                username,
+                book_title,
+                issue_date,
+                due_date,
+                status
+            FROM student_transaction_history
+        """;
+        
+        try (
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery()
+        ) {
+            while (rs.next()) {
+                TransactionReportDTO report = new TransactionReportDTO(
+                        rs.getInt("transaction_id"),
+                        rs.getString("username"),
+                        rs.getString("book_title"),
+                        rs.getDate("issue_date"),
+                        rs.getDate("due_date"),
+                        rs.getString("status")
+                );
+                
+                reports.add(report);
+            }
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to load transaction reports");
+        }
+        
+        return reports;
+    }
+    
+    // search transactions
+    public List<TransactionReportDTO> searchTransactionReports(String keyword) {
+
+        List<TransactionReportDTO> reports = new ArrayList<>();
+
+        String sql = """
+            SELECT
+                transaction_id,
+                username,
+                book_title,
+                issue_date,
+                due_date,
+                status
+            FROM student_transaction_history
+            WHERE
+                CAST(transaction_id AS CHAR) LIKE ?
+                OR username LIKE ?
+                OR book_title LIKE ?
+                OR status LIKE ?
+        """;
+
+        try (
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+
+            String search = "%" + keyword + "%";
+
+            String digits = keyword.replaceAll("[^0-9]", "").replaceFirst("^0+", "");
+        
+            String idSearch = digits.isEmpty() ? "%no_numeric_id_provided%" : "%" + digits + "%";
+
+            stmt.setString(1, idSearch);
+            stmt.setString(2, search);
+            stmt.setString(3, search);
+            stmt.setString(4, search);
+
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+
+                TransactionReportDTO report = new TransactionReportDTO(
+                        rs.getInt("transaction_id"),
+                        rs.getString("username"),
+                        rs.getString("book_title"),
+                        rs.getDate("issue_date"),
+                        rs.getDate("due_date"),
+                        rs.getString("status")
+                );
+
+                reports.add(report);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to search transaction reports");
+            }
+
+        return reports;
+    }
 }
- 
