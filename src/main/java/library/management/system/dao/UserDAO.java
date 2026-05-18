@@ -12,7 +12,7 @@ import library.management.system.model.Admin;
 import library.management.system.model.Librarian;
 import library.management.system.model.Student;
 import library.management.system.util.DBConnection;
-import library.management.system.dto.UserTableDTO;
+import library.management.system.dto.*;
 
 public class UserDAO {
     
@@ -92,7 +92,7 @@ public class UserDAO {
         }
     }
     
-    // return list of all users
+    // return list of all active users
     public List<UserTableDTO> getActiveUsers() {
         
         List<UserTableDTO> users = new ArrayList<>();
@@ -124,7 +124,7 @@ public class UserDAO {
         return users;
     }
     
-    // search for users based on keyword
+    // search for active users based on keyword
     public List<UserTableDTO> searchUsers(String keyword) {
         
         List<UserTableDTO> users = new ArrayList<>();
@@ -209,5 +209,128 @@ public class UserDAO {
         }
          
         return users;
+    }
+    
+    // get user info for librarian members table
+    public List<MemberTableDTO> getMembersTable() {
+
+        List<MemberTableDTO> members = new ArrayList<>();
+
+        String sql = """
+            SELECT
+                u.name,
+                u.username,
+                COUNT(t.transaction_id) AS issued_books,
+                CASE
+                    WHEN SUM(
+                        CASE
+                            WHEN t.status = 'ISSUED'
+                             AND t.due_date < CURDATE()
+                            THEN 1
+                            ELSE 0
+                        END
+                    ) > 0
+                    THEN 'Blocked'
+                    ELSE 'Active'
+                END AS member_status
+            FROM Users u
+            LEFT JOIN Transactions t
+                ON u.user_id = t.user_id
+                AND t.status = 'ISSUED'
+            WHERE u.role = 'STUDENT'
+              AND u.is_active = TRUE
+            GROUP BY u.user_id, u.name, u.username
+        """;
+
+        try (
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery()
+        ) {
+            while (rs.next()) {
+                members.add(new MemberTableDTO(
+                        rs.getString("name"),
+                        rs.getString("username"),
+                        rs.getInt("issued_books"),
+                        rs.getString("member_status")
+                ));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to load members");
+        }
+
+        return members;
+    }
+    
+    // return result of search in librarian member card
+    public List<MemberTableDTO> searchMembers(String keyword) {
+
+        List<MemberTableDTO> members = new ArrayList<>();
+
+        String sql = """
+            SELECT *
+            FROM (
+                SELECT
+                    u.name,
+                    u.username,
+                    COUNT(t.transaction_id) AS issued_books,
+                    CASE
+                        WHEN SUM(
+                            CASE
+                                WHEN t.status = 'ISSUED'
+                                 AND t.due_date < CURDATE()
+                                THEN 1
+                                ELSE 0
+                            END
+                        ) > 0
+                        THEN 'Blocked'
+                        ELSE 'Active'
+                    END AS member_status
+                FROM Users u
+                LEFT JOIN Transactions t
+                    ON u.user_id = t.user_id
+                    AND t.status = 'ISSUED'
+                WHERE u.role = 'STUDENT'
+                  AND u.is_active = TRUE
+                GROUP BY u.user_id, u.name, u.username
+            ) AS member_table
+            WHERE name LIKE ?
+               OR username LIKE ?
+               OR CAST(issued_books AS CHAR) LIKE ?
+               OR member_status LIKE ?
+        """;
+
+        try (
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+            String search = "%" + keyword + "%";
+
+            stmt.setString(1, search);
+            stmt.setString(2, search);
+            stmt.setString(3, search);
+            stmt.setString(4, search);
+
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                MemberTableDTO member = new MemberTableDTO(
+                        rs.getString("name"),
+                        rs.getString("username"),
+                        rs.getInt("issued_books"),
+                        rs.getString("member_status")
+                );
+
+                members.add(member);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to search members");
+        }
+
+        return members;
     }
 }

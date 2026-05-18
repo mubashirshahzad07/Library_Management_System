@@ -1,5 +1,6 @@
 package library.management.system.ui;
 
+import library.management.system.dto.BookTableDTO;
 import library.management.system.model.Book;
 import library.management.system.model.User;
 import library.management.system.service.BookService;
@@ -329,15 +330,15 @@ public class StudentFrameSearchBooksCard implements ActionListener {
             }
 
             try {
-                List<Book> books = bookService.searchBooks(keyword);
-                for (Book b : books) {
+                List<BookTableDTO> books = bookService.searchBooks(keyword);
+                for (BookTableDTO b : books) {
                     // Check if this student already has this specific book issued
                     boolean alreadyBorrowed = isAlreadyBorrowed(b.getBookId());
                     String buttonLabel = alreadyBorrowed ? "Borrowed" : "Borrow";
                     model.addRow(new Object[]{
                             b.getTitle(),
                             b.getAuthor(),
-                            b.getAvailableCopies() > 0 ? "Yes" : "No",
+                            b.getTotalCopies() > 0 ? "Yes" : "No",
                             buttonLabel
                     });
                 }
