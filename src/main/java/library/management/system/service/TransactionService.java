@@ -1,123 +1,125 @@
 package library.management.system.service;
-
+ 
 import library.management.system.dao.TransactionDAO;
+import library.management.system.dao.BookDAO;
+import library.management.system.dao.UserDAO;
 import library.management.system.model.Transaction;
-
+import library.management.system.model.User;
+import library.management.system.model.Book;
+ 
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
+ 
 public class TransactionService {
-
+ 
     private final TransactionDAO transactionDAO;
     private final BookDAO        bookDAO;
     private final UserDAO        userDAO;
-
+ 
     public TransactionService() {
         this.transactionDAO = new TransactionDAO();
         this.bookDAO        = new BookDAO();
         this.userDAO        = new UserDAO();
     }
-
-    // ── Issue a book to a user ────────────────────────────────────────────────
-    public boolean issueBook(int userId, int bookId) {
-
-        //  Student exists?
-        User student = userDAO.findUserById(userId);
+ 
+    // ── Issue a book to a student ─────────────────────────────────────────────
+    // bookQuery can be either a title or an ISBN — both are checked.
+    // Role hardcoded to STUDENT 
+    public boolean issueBook(String username, String bookQuery) {
+ 
+        // Student exists and is active?
+        User student = userDAO.findByUsernameAndRole(username, "STUDENT");
         if (student == null) {
-            throw new RuntimeException("Student with ID " + userId + " not found.");
+            throw new RuntimeException("No active student found with username \""
+                    + username + "\".");
         }
-
-        //  Student account active? (is_active = TRUE in Users table)
-        if (!transactionDAO.isUserActive(userId)) {
-            throw new RuntimeException("Student account is inactive. "
-                    + "Please contact an administrator.");
-        }
-
-        //  Student blocked due to overdue book?
+ 
+        int userId = student.getUserId();
+ 
+        // Student blocked due to overdue book
         if (transactionDAO.hasOverdueBooks(userId)) {
             throw new RuntimeException("Student is blocked due to an overdue book. "
                     + "Please return the overdue book first.");
         }
-
-        //  Book exists?
-        Book book = bookDAO.findBookById(bookId);
+ 
+        // Look up book by title or ISBN in one call
+        Book book = bookDAO.findByTitleOrIsbn(bookQuery);
         if (book == null) {
-            throw new RuntimeException("Book with ID " + bookId + " not found.");
+            throw new RuntimeException("No book found matching \""
+                    + bookQuery + "\". Please check the title or ISBN.");
         }
-
-        //  available_copies > 0?
+ 
+        // available_copies > 0
         if (book.getAvailableCopies() <= 0) {
             throw new RuntimeException("No copies available for \""
                     + book.getTitle() + "\" at the moment.");
         }
-
-        // Build the transaction — due 14 days from today
+ 
+        // Build transaction — DB assigns the ID
         Date issueDate = new Date();
         Date dueDate   = new Date(issueDate.getTime() + TimeUnit.DAYS.toMillis(14));
-        int  newId     = generateTransactionId();
-
+ 
         Transaction transaction = new Transaction(
-            newId, userId, bookId,
+            userId, book.getBookId(),
             issueDate, dueDate,
             null,    // return_date: null until returned
-            0.0,     // fine_amount: not applicable
-            "ISSUED" // status
+            "ISSUED"
         );
-
-        // Persist transaction row
+ 
+        // DAO inserts the row — DB generates and stores the transaction_id
         boolean saved = transactionDAO.issueBook(transaction);
         if (!saved) {
             throw new RuntimeException("Failed to issue book. Please try again.");
         }
-
-        //  Reduce available_copies by 1
-        book.issueBook();
+ 
+        // Reduce available_copies by 1
+        book.setAvailableCopies(book.getAvailableCopies() - 1);
         bookDAO.updateBook(book);
-
+ 
         return true;
     }
-
+ 
     // ── Return a book ─────────────────────────────────────────────────────────
     public boolean returnBook(int transactionId) {
-
-        //  Transaction exists?
+ 
+        // Transaction exists
         Transaction transaction = transactionDAO.findTransactionById(transactionId);
         if (transaction == null) {
             throw new RuntimeException("Transaction with ID " + transactionId + " not found.");
         }
-
-        //  Book was actually issued (not already returned)?
+ 
+        // Book was actually issued (not already returned)
         if (!"ISSUED".equalsIgnoreCase(transaction.getStatus())) {
             throw new RuntimeException("This book has already been returned.");
         }
-
+ 
         // Update transaction row
         Date returnDate = new Date();
         boolean updated = transactionDAO.returnBook(transactionId, returnDate);
         if (!updated) {
             throw new RuntimeException("Failed to process return. Please try again.");
         }
-
-        //  Increase available_copies by 1
+ 
+        // Increase available_copies by 1
         Book book = bookDAO.findBookById(transaction.getBookId());
         if (book != null) {
-            book.returnBook();
+            book.setAvailableCopies(book.getAvailableCopies() + 1);
             bookDAO.updateBook(book);
         }
-
+ 
         return true;
     }
-
+ 
     // ── Get student block status (for Admin / Librarian view) ─────────────────
     public String getStudentStatus(int userId) {
-
+ 
         List<Transaction> overdue = transactionDAO.getOverdueTransactionsByUser(userId);
-
+ 
         if (overdue.isEmpty()) {
             return "CLEAR — No overdue books.";
         }
-
+ 
         StringBuilder status = new StringBuilder("BLOCKED — Overdue books:\n");
         for (Transaction t : overdue) {
             status.append("  → Book ID : ").append(t.getBookId()).append("\n")
@@ -125,9 +127,5 @@ public class TransactionService {
         }
         return status.toString();
     }
-
-    // ── Generate a unique transaction ID ──────────────────────────────────────
-    private int generateTransactionId() {
-        return (int)(System.currentTimeMillis() % Integer.MAX_VALUE);
-    }
 }
+ 

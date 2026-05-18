@@ -12,56 +12,42 @@ public class Transaction {
     private Date returnDate;
     private String status;
 
-    
+    // ── Full constructor  ──────────────────────────
     public Transaction(int transactionId, int userId, int bookId,
                        Date issueDate, Date dueDate,
                        Date returnDate, String status) {
-
         this.transactionId = transactionId;
-        this.userId = userId;
-        this.bookId = bookId;
-        this.issueDate = issueDate;
-        this.dueDate = dueDate;
-        this.returnDate = returnDate;
-        this.status = status;
+        this.userId        = userId;
+        this.bookId        = bookId;
+        this.issueDate     = issueDate;
+        this.dueDate       = dueDate;
+        this.returnDate    = returnDate;
+        this.status        = status;
     }
 
-    
-    public int getTransactionId() {
-        return transactionId;
+    // ── No-ID constructor (used when issuing — DB auto-generates the ID) ──────
+    public Transaction(int userId, int bookId,
+                       Date issueDate, Date dueDate,
+                       Date returnDate, String status) {
+        this.transactionId = 0;   // placeholder; DB assigns the real ID
+        this.userId        = userId;
+        this.bookId        = bookId;
+        this.issueDate     = issueDate;
+        this.dueDate       = dueDate;
+        this.returnDate    = returnDate;
+        this.status        = status;
     }
 
-    public int getUserId() {
-        return userId;
-    }
+    // ── Getters ───────────────────────────────────────────────────────────────
+    public int    getTransactionId() { return transactionId; }
+    public int    getUserId()        { return userId;        }
+    public int    getBookId()        { return bookId;        }
+    public Date   getIssueDate()     { return issueDate;     }
+    public Date   getDueDate()       { return dueDate;       }
+    public Date   getReturnDate()    { return returnDate;    }
+    public String getStatus()        { return status;        }
 
-    public int getBookId() {
-        return bookId;
-    }
-
-    public Date getIssueDate() {
-        return issueDate;
-    }
-
-    public Date getDueDate() {
-        return dueDate;
-    }
-
-    public Date getReturnDate() {
-        return returnDate;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setReturnDate(Date returnDate) {
-        this.returnDate = returnDate;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    
+    // ── Setters (only mutable fields need them) ───────────────────────────────
+    public void setReturnDate(Date returnDate) { this.returnDate = returnDate; }
+    public void setStatus(String status)       { this.status     = status;     }
 }
