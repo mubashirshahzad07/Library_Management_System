@@ -11,29 +11,32 @@ import java.util.List;
 public class BookDAO {
  
     // ── Insert a new book ─────────────────────────────────────────────────────
-    public boolean insertBook(Book book) {
+    public boolean addBook(Book book) {
         String sql = "INSERT INTO Books "
-                   + "(book_id, isbn, title, author, category, total_copies, available_copies) "
-                   + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+                   + "(isbn, title, author, category, total_copies, available_copies) "
+                   + "VALUES (?, ?, ?, ?, ?, ?)";
  
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement ps = conn.prepareStatement(sql)
+        ) {
+            ps.setString(1, book.getIsbn());
+            ps.setString(2, book.getTitle());
+            ps.setString(3, book.getAuthor());
+            ps.setString(4, book.getCategory());
+            ps.setInt   (5, book.getTotalCopies());
+            ps.setInt   (6, book.getAvailableCopies());
  
-            ps.setInt   (1, book.getBookId());
-            ps.setString(2, book.getIsbn());
-            ps.setString(3, book.getTitle());
-            ps.setString(4, book.getAuthor());
-            ps.setString(5, book.getCategory());
-            ps.setInt   (6, book.getTotalCopies());
-            ps.setInt   (7, book.getAvailableCopies());
- 
-            return ps.executeUpdate() > 0;
+            ps.executeUpdate();
  
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
+            throw new RuntimeException("Book could not be added");
         }
+ 
+        return true;
     }
+
  
     // ── Fetch all books ───────────────────────────────────────────────────────
     public List<Book> getAllBooks() {

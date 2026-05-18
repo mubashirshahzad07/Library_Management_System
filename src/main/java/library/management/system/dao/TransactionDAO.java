@@ -9,38 +9,35 @@ import java.util.List;
  
 public class TransactionDAO {
  
-    // ── Issue a book (INSERT a new transaction row) ──────────────────────────
-    public boolean issueBook(Transaction transaction) {
-        String sql = "INSERT INTO transactions "
-                   + "(transaction_id, user_id, book_id, issue_date, due_date, "
-                   + " return_date, status) "
-                   + "VALUES (?, ?, ?, ?, ?, ?, ?)";
- 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
- 
-            ps.setInt (1, transaction.getTransactionId());
-            ps.setInt (2, transaction.getUserId());
-            ps.setInt (3, transaction.getBookId());
-            ps.setDate(4, new java.sql.Date(transaction.getIssueDate().getTime()));
-            ps.setDate(5, new java.sql.Date(transaction.getDueDate().getTime()));
- 
-            if (transaction.getReturnDate() != null) {
-                ps.setDate(6, new java.sql.Date(transaction.getReturnDate().getTime()));
-            } else {
-                ps.setNull(6, Types.DATE);
-            }
- 
-            ps.setString(7, transaction.getStatus());
- 
-            return ps.executeUpdate() > 0;
- 
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
+    // ── Issue a book  ──────────────────────────
+public boolean issueBook(Transaction transaction) {
+    String sql = "INSERT INTO transactions "
+               + "(user_id, book_id, issue_date, due_date, return_date, status) "
+               + "VALUES (?, ?, ?, ?, ?, ?)";
+    
+    try (Connection conn = DBConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+        
+        ps.setInt(1, transaction.getUserId());
+        ps.setInt(2, transaction.getBookId());
+        ps.setDate(3, new java.sql.Date(transaction.getIssueDate().getTime()));
+        ps.setDate(4, new java.sql.Date(transaction.getDueDate().getTime()));
+        
+        if (transaction.getReturnDate() != null) {
+            ps.setDate(5, new java.sql.Date(transaction.getReturnDate().getTime()));
+        } else {
+            ps.setNull(5, Types.DATE);
         }
+        
+        ps.setString(6, transaction.getStatus());
+        
+        return ps.executeUpdate() > 0;
+        
+    } catch (SQLException e) {
+        e.printStackTrace();
+        return false;
     }
- 
+}
     // ── Return a book (UPDATE return date and status) ─────────────────────────
     public boolean returnBook(int transactionId, java.util.Date returnDate) {
         String sql = "UPDATE transactions "

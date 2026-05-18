@@ -34,7 +34,7 @@ public class BookService {
 
         // available_copies must equal total_copies on a new book
         book.setAvailableCopies(book.getTotalCopies());
-        return bookDAO.insertBook(book);
+        return bookDAO.addBook(book);
     }
 
     // ── Soft-delete a book (set is_active = false) ────────────────────────────
