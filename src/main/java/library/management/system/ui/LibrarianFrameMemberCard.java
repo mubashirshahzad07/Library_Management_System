@@ -1,6 +1,8 @@
 package library.management.system.ui;
 
-import library.management.system.util.DBConnection;
+import library.management.system.dto.MemberTableDTO;
+import library.management.system.dto.UserTableDTO;
+import library.management.system.service.UserService;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -9,7 +11,8 @@ import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.sql.*;
+
+import java.util.List;
 
 /**
  * @since 16 May 2026
@@ -22,6 +25,7 @@ public class LibrarianFrameMemberCard implements ActionListener {
     private DefaultTableModel model;
     private JScrollPane scrollPane;
     private JTable membersTable;
+    private UserService userService = new UserService();
 
     public LibrarianFrameMemberCard(JPanel membersCard) {
         this.membersCard = membersCard;
@@ -99,7 +103,7 @@ public class LibrarianFrameMemberCard implements ActionListener {
         model.addColumn("Issued Books");
         model.addColumn("Status");
 
-        populateTable(null);
+        getAllMembers();
 
         membersTable = new JTable(model);
         applyTableStyling();
@@ -150,55 +154,44 @@ public class LibrarianFrameMemberCard implements ActionListener {
         });
     }
 
-    private void populateTable(String keyword) {
+    private void getAllMembers() {
         model.setRowCount(0);
 
-        String sql = "SELECT u.name, u.username, " +
-                "    (SELECT COUNT(*) FROM Transactions t WHERE t.user_id = u.user_id AND t.status = 'ISSUED') AS books_out, " +
-                "    CASE WHEN EXISTS (" +
-                "        SELECT 1 FROM Transactions t2 WHERE t2.user_id = u.user_id " +
-                "        AND t2.status = 'ISSUED' AND t2.due_date < CURDATE()) " +
-                "    THEN 'Overdue' ELSE 'Active' END AS status " +
-                "FROM Users u " +
-                "WHERE u.role = 'STUDENT' AND u.is_active = TRUE";
+        List<MemberTableDTO> users = userService.getMemberTableDTO();
 
-        if (keyword != null && !keyword.isEmpty()) {
-            sql += " AND (LOWER(u.name) LIKE ? OR LOWER(u.username) LIKE ?)";
+        for (MemberTableDTO user : users) {
+            model.addRow(new Object[] {user.getName(), user.getUsername(), user.getIssuedBooks(), user.getStatus()});
         }
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            if (keyword != null && !keyword.isEmpty()) {
-                String pattern = "%" + keyword.toLowerCase() + "%";
-                ps.setString(1, pattern);
-                ps.setString(2, pattern);
-            }
-
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                model.addRow(new Object[]{
-                        rs.getString("name"),
-                        rs.getString("username"),
-                        rs.getInt("books_out"),
-                        rs.getString("status")
-                });
-            }
-
-            if (model.getRowCount() == 0 && keyword != null && !keyword.isEmpty()) {
-                JOptionPane.showMessageDialog(membersCard, "No members found for: " + keyword,
-                        "Search", JOptionPane.INFORMATION_MESSAGE);
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+//            if (model.getRowCount() == 0 && keyword != null && !keyword.isEmpty()) {
+//                JOptionPane.showMessageDialog(membersCard, "No members found for: " + keyword,
+//                        "Search", JOptionPane.INFORMATION_MESSAGE);
+//            }
 
         if (scrollPane != null) {
             scrollPane.getViewport().setBackground(new Color(0x212020));
             scrollPane.setBorder(BorderFactory.createEmptyBorder());
         }
     }
+
+   private void getSearchedMembers(String keyword)  {
+        model.setRowCount(0);
+        List<MemberTableDTO> users = userService.searchMemberTable(keyword);
+
+       for (MemberTableDTO user : users) {
+           model.addRow(new Object[] {user.getName(), user.getUsername(), user.getIssuedBooks(), user.getStatus()});
+       }
+
+       if (model.getRowCount() == 0 && keyword != null && !keyword.isEmpty()) {
+           JOptionPane.showMessageDialog(membersCard, "No members found for: " + keyword,
+                   "Search", JOptionPane.INFORMATION_MESSAGE);
+       }
+
+       if (scrollPane != null) {
+           scrollPane.getViewport().setBackground(new Color(0x212020));
+           scrollPane.setBorder(BorderFactory.createEmptyBorder());
+       }
+   }
 
     private void addVerticalFiller() {
         GridBagConstraints gbc = new GridBagConstraints();
@@ -213,7 +206,7 @@ public class LibrarianFrameMemberCard implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == searchButton) {
             String keyword = searchBox.getText().strip();
-            populateTable(keyword);
+            getSearchedMembers(keyword);
         }
     }
 }
