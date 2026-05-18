@@ -196,8 +196,8 @@ public class LibrarianFrameDashboardCard {
             }
         };
 
-        model.addColumn("Member");
-        model.addColumn("Book");
+        model.addColumn("Username");
+        model.addColumn("Book title");
         model.addColumn("Due date");
         model.addColumn("Status");
 
