@@ -143,5 +143,10 @@ public class TransactionService {
     public List<IssuedBookDTO> getIssuedBooks() {
         return transactionDAO.getIssuedBooks();
     }
+    
+    // get student borrowed books
+    public List<StudentBorrowedBookDTO> getStudentBorrowedBooks(int userId) {
+        return transactionDAO.getStudentBorrowedBooks(userId);
+    }
 }
  
