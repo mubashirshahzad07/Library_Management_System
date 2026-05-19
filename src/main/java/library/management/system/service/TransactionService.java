@@ -25,8 +25,7 @@ public class TransactionService {
     }
  
     // ── Issue a book to a student ─────────────────────────────────────────────
-    // bookQuery can be either a title or an ISBN — both are checked.
-    // Role hardcoded to STUDENT 
+    // bookQuery can be either a title or an ISBN 
     public boolean issueBook(String username, String bookQuery) {
  
         // Student exists and is active?
@@ -81,36 +80,23 @@ public class TransactionService {
         return true;
     }
  
-    // ── Return a book ─────────────────────────────────────────────────────────
-    public boolean returnBook(int transactionId) {
- 
-        // Transaction exists
-        Transaction transaction = transactionDAO.findTransactionById(transactionId);
-        if (transaction == null) {
-            throw new RuntimeException("Transaction with ID " + transactionId + " not found.");
-        }
- 
-        // Book was actually issued (not already returned)
-        if (!"ISSUED".equalsIgnoreCase(transaction.getStatus())) {
-            throw new RuntimeException("This book has already been returned.");
-        }
- 
-        // Update transaction row
-        Date returnDate = new Date();
-        boolean updated = transactionDAO.returnBook(transactionId, returnDate);
-        if (!updated) {
-            throw new RuntimeException("Failed to process return. Please try again.");
-        }
- 
-        // Increase available_copies by 1
-        Book book = bookDAO.findBookById(transaction.getBookId());
-        if (book != null) {
-            book.setAvailableCopies(book.getAvailableCopies() + 1);
-            bookDAO.updateBook(book);
-        }
- 
-        return true;
+  // ── Return a book ─────────────────────────────────────────────────────────
+public boolean returnBook(String bookTitleOrIsbn, String memberUsername) {
+
+    boolean updated = transactionDAO.returnBook(bookTitleOrIsbn, memberUsername);
+    if (!updated) {
+        throw new RuntimeException("No active issued transaction found for the given book and member.");
     }
+
+    // Find the book to increment available_copies
+    Book book = bookDAO.findByTitleOrIsbn(bookTitleOrIsbn);
+    if (book != null) {
+        book.setAvailableCopies(book.getAvailableCopies() + 1);
+        bookDAO.updateBook(book);
+    }
+
+    return true;
+}
  
     // ── Get student block status (for Admin / Librarian view) ─────────────────
     public String getStudentStatus(int userId) {

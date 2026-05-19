@@ -40,24 +40,48 @@ public boolean issueBook(Transaction transaction) {
     }
 }
     // ── Return a book (UPDATE return date and status) ─────────────────────────
-    public boolean returnBook(int transactionId, java.util.Date returnDate) {
-        String sql = "UPDATE transactions "
-                   + "SET return_date = ?, status = 'RETURNED' "
-                   + "WHERE transaction_id = ?";
- 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
- 
-            ps.setDate(1, new java.sql.Date(returnDate.getTime()));
-            ps.setInt (2, transactionId);
- 
-            return ps.executeUpdate() > 0;
- 
-        } catch (SQLException e) {
-            e.printStackTrace();
+public boolean returnBook(String bookTitleOrIsbn, String memberUsername) {
+    String findSql = "SELECT t.transaction_id "
+                   + "FROM transactions t "
+                   + "JOIN books b ON t.book_id = b.book_id "
+                   + "JOIN users u ON t.user_id = u.user_id "
+                   + "WHERE (b.title = ? OR b.isbn = ?) "
+                   + "AND u.username = ? "
+                   + "AND t.status = 'ISSUED' "
+                   + "ORDER BY t.issue_date DESC "
+                   + "LIMIT 1";
+
+    String updateSql = "UPDATE transactions "
+                     + "SET return_date = ?, status = 'RETURNED' "
+                     + "WHERE transaction_id = ?";
+
+    try (Connection conn = DBConnection.getConnection();
+         PreparedStatement findPs = conn.prepareStatement(findSql)) {
+
+        findPs.setString(1, bookTitleOrIsbn);
+        findPs.setString(2, bookTitleOrIsbn);
+        findPs.setString(3, memberUsername);
+
+        ResultSet rs = findPs.executeQuery();
+
+        if (!rs.next()) {
+            System.out.println("No active transaction found for the given book and member.");
             return false;
         }
+
+        int transactionId = rs.getInt("transaction_id");
+
+        try (PreparedStatement updatePs = conn.prepareStatement(updateSql)) {
+            updatePs.setDate(1, new java.sql.Date(System.currentTimeMillis()));
+            updatePs.setInt(2, transactionId);
+            return updatePs.executeUpdate() > 0;
+        }
+
+    } catch (SQLException e) {
+        e.printStackTrace();
+        return false;
     }
+}
  
     // ── Find a single transaction by ID ──────────────────────────────────────
     public Transaction findTransactionById(int transactionId) {
