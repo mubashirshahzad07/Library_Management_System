@@ -49,18 +49,6 @@ CREATE TABLE Fines (
     FOREIGN KEY (transaction_id) REFERENCES Transactions(transaction_id)
 );
 
-CREATE VIEW overdue_report AS
-SELECT 
-    u.username AS student_name, 
-    b.title AS book_title, 
-    f.fine_amount, 
-    f.payment_status
-FROM Fines f
-JOIN Users u ON f.user_id = u.user_id
-JOIN Transactions t ON f.transaction_id = t.transaction_id
-JOIN Books b ON t.book_id = b.book_id
-WHERE u.is_active = TRUE AND b.is_active = TRUE;
-
 CREATE VIEW student_transaction_history AS
 SELECT
     t.transaction_id,
@@ -97,17 +85,36 @@ JOIN Users u ON t.user_id = u.user_id
 JOIN Books b ON t.book_id = b.book_id
 WHERE t.status = 'ISSUED' AND u.is_active = TRUE AND b.is_active = TRUE;
 
-CREATE VIEW current_overdue_books AS
-SELECT 
+CREATE VIEW fines_report AS
+-- Returned late books (stored fines)
+SELECT
     t.transaction_id,
-    u.username AS student_name,
+    u.username AS student_username,
     b.title AS book_title,
     t.due_date,
-    DATEDIFF(CURDATE(), t.due_date) * 1.00 AS calculated_fine
+    t.return_date,
+    f.fine_amount,
+    f.payment_status
+FROM Fines f
+JOIN Transactions t ON f.transaction_id = t.transaction_id
+JOIN Users u ON t.user_id = u.user_id
+JOIN Books b ON t.book_id = b.book_id
+
+UNION
+
+-- Currently overdue books (dynamic fines)
+SELECT
+    t.transaction_id,
+    u.username AS student_username,
+    b.title AS book_title,
+    t.due_date,
+    NULL AS return_date,
+    DATEDIFF(CURDATE(), t.due_date) * 1.00 AS fine_amount,
+    'PENDING' AS payment_status
 FROM Transactions t
 JOIN Users u ON t.user_id = u.user_id
 JOIN Books b ON t.book_id = b.book_id
-WHERE t.return_date IS NULL AND CURDATE() > t.due_date AND u.is_active = TRUE AND b.is_active = TRUE;
+WHERE t.status = 'ISSUED' AND t.due_date < CURDATE();
 
 INSERT INTO Users (name, username, password, role) VALUES
 ('Mubashir Shahzad', 'Mubashir_Librarian', 'admin123', 'LIBRARIAN'),
