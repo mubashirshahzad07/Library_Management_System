@@ -1,6 +1,8 @@
 package library.management.system.ui;
 
+import library.management.system.dto.StudentBorrowedBookDTO;
 import library.management.system.model.User;
+import library.management.system.service.TransactionService;
 import library.management.system.util.DBConnection;
 
 import javax.swing.*;
@@ -10,20 +12,24 @@ import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.sql.*;
 
+import java.util.List;
+
 /**
- * @since 03 May 2026
  * Handles the books that are currently borrowed by Student
  */
 public class StudentFrameMyBooksCard {
     private final JPanel myBooksCard;
-    private final int userId;
+    private final TransactionService transactionService = new TransactionService();
+    private DefaultTableModel model;
+    private JScrollPane scrollPane;
+    private User user;
 
     public StudentFrameMyBooksCard(JPanel myBooksCard, User user) {
+        this.user = user;
         this.myBooksCard = myBooksCard;
-        this.userId = user.getUserId();
         this.addCardHeading();
         this.addBooksReturnInformation();
-        this.addMyBooksTable();
+        this.addMyBooksTable(user.getUserId());
         this.addVerticalFiller();
     }
 
@@ -60,7 +66,7 @@ public class StudentFrameMyBooksCard {
                 "ORDER BY overdue DESC, t.due_date ASC LIMIT 1";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userId);
+            ps.setInt(1, user.getUserId());
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 String title = rs.getString("title");
@@ -95,8 +101,8 @@ public class StudentFrameMyBooksCard {
         myBooksCard.add(booksReturnInformation, gbc);
     }
 
-    private void addMyBooksTable() {
-        DefaultTableModel model = new DefaultTableModel() {
+    private void addMyBooksTable(int userId) {
+        model = new DefaultTableModel() {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -108,27 +114,7 @@ public class StudentFrameMyBooksCard {
         model.addColumn("Due date");
         model.addColumn("Status");
 
-        String sql = "SELECT b.title, t.issue_date, t.due_date, " +
-                "CASE WHEN t.due_date < CURDATE() THEN 'Overdue' " +
-                "     WHEN DATEDIFF(t.due_date, CURDATE()) <= 3 THEN 'Due soon' " +
-                "     ELSE 'Issued' END AS status " +
-                "FROM Transactions t JOIN Books b ON t.book_id = b.book_id " +
-                "WHERE t.user_id = ? AND t.status = 'ISSUED' ORDER BY t.due_date ASC";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userId);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                model.addRow(new Object[]{
-                        rs.getString("title"),
-                        rs.getDate("issue_date").toString(),
-                        rs.getDate("due_date").toString(),
-                        rs.getString("status")
-                });
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        getBooksIssued(userId);
 
         JTable myBooksTable = new JTable(model);
         JTableHeader header = myBooksTable.getTableHeader();
@@ -162,7 +148,7 @@ public class StudentFrameMyBooksCard {
         ));
 
         GridBagConstraints gbc = new GridBagConstraints();
-        JScrollPane scrollPane = new JScrollPane(myBooksTable);
+        scrollPane = new JScrollPane(myBooksTable);
         scrollPane.getViewport().setBackground(new Color(0x212020));
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         gbc.gridx = 0;
@@ -171,6 +157,20 @@ public class StudentFrameMyBooksCard {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(5, 25, 5, 25);
         myBooksCard.add(scrollPane, gbc);
+    }
+
+    private void getBooksIssued(int userId) {
+        model.setRowCount(0);
+        java.util.List<StudentBorrowedBookDTO> books = transactionService.getStudentBorrowedBooks(userId);
+
+        for (StudentBorrowedBookDTO book : books) {
+            model.addRow(new Object[] {book.getTitle(), book.getAuthor(), book.getDueDate(), book.getStatus()});
+        }
+
+        if (scrollPane != null) {
+            scrollPane.getViewport().setBackground(new Color(0x212020));
+            scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        }
     }
 
     private void addVerticalFiller() {
