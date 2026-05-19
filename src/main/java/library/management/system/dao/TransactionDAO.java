@@ -40,7 +40,7 @@ public boolean issueBook(Transaction transaction) {
     }
 }
     // ── Return a book (UPDATE return date and status) ─────────────────────────
-public boolean returnBook(String bookTitleOrIsbn, String memberUsername) {
+public int returnBook(String bookTitleOrIsbn, String memberUsername) {
     String findSql = "SELECT t.transaction_id "
                    + "FROM transactions t "
                    + "JOIN books b ON t.book_id = b.book_id "
@@ -66,7 +66,7 @@ public boolean returnBook(String bookTitleOrIsbn, String memberUsername) {
 
         if (!rs.next()) {
             System.out.println("No active transaction found for the given book and member.");
-            return false;
+            return -1;
         }
 
         int transactionId = rs.getInt("transaction_id");
@@ -74,13 +74,20 @@ public boolean returnBook(String bookTitleOrIsbn, String memberUsername) {
         try (PreparedStatement updatePs = conn.prepareStatement(updateSql)) {
             updatePs.setDate(1, new java.sql.Date(System.currentTimeMillis()));
             updatePs.setInt(2, transactionId);
-            return updatePs.executeUpdate() > 0;
+            
+            int rowsAffected = updatePs.executeUpdate();
+
+            if (rowsAffected > 0) {
+                return transactionId;
+            }
         }
 
     } catch (SQLException e) {
         e.printStackTrace();
-        return false;
+        throw new RuntimeException("No active issued transaction found");
     }
+    
+    return -1;
 }
  
     // ── Find a single transaction by ID ──────────────────────────────────────
@@ -420,5 +427,48 @@ public boolean returnBook(String bookTitleOrIsbn, String memberUsername) {
         }
 
         return books;
+    }
+    
+    // student transaction history table
+    public List<StudentHistoryDTO> getStudentHistory(int userId) {
+
+        List<StudentHistoryDTO> history = new ArrayList<>();
+
+        String sql = """
+            SELECT book_title, issue_date, return_date, fine_amount
+            FROM student_transaction_history
+            WHERE user_id = ?
+            AND status = 'RETURNED'
+        """;
+
+        try (
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+            stmt.setInt(1, userId);
+
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                double fine = rs.getDouble("fine_amount");
+
+                if (rs.wasNull()) {
+                    fine = 0;
+                }
+
+                history.add(new StudentHistoryDTO(
+                        rs.getString("book_title"),
+                        rs.getDate("issue_date"),
+                        rs.getDate("return_date"),
+                        fine
+                ));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to load student history");
+        }
+
+        return history;
     }
 }

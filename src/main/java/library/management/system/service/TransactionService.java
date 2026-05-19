@@ -11,12 +11,13 @@ import library.management.system.dto.*;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
- 
+
 public class TransactionService {
  
     private final TransactionDAO transactionDAO;
     private final BookDAO        bookDAO;
     private final UserDAO        userDAO;
+    private FineService fineService = new FineService();
  
     public TransactionService() {
         this.transactionDAO = new TransactionDAO();
@@ -80,13 +81,17 @@ public class TransactionService {
         return true;
     }
  
-  // ── Return a book ─────────────────────────────────────────────────────────
-public boolean returnBook(String bookTitleOrIsbn, String memberUsername) {
+    // ── Return a book ─────────────────────────────────────────────────────────
+    public boolean returnBook(String bookTitleOrIsbn, String memberUsername) {
 
-    boolean updated = transactionDAO.returnBook(bookTitleOrIsbn, memberUsername);
-    if (!updated) {
-        throw new RuntimeException("No active issued transaction found for the given book and member.");
-    }
+        int updated = transactionDAO.returnBook(bookTitleOrIsbn, memberUsername);
+        if (updated == -1) {
+            throw new RuntimeException("No active issued transaction found for the given book and member.");
+        }
+        
+        // create fine is returned late
+        Transaction transaction = transactionDAO.findTransactionById(updated);
+        fineService.createFine(transaction);
 
     // Find the book to increment available_copies
     Book book = bookDAO.findByTitleOrIsbn(bookTitleOrIsbn);
@@ -97,7 +102,7 @@ public boolean returnBook(String bookTitleOrIsbn, String memberUsername) {
 
     return true;
 }
- 
+
     // ── Get student block status (for Admin / Librarian view) ─────────────────
     public String getStudentStatus(int userId) {
  
@@ -133,6 +138,11 @@ public boolean returnBook(String bookTitleOrIsbn, String memberUsername) {
     // get student borrowed books
     public List<StudentBorrowedBookDTO> getStudentBorrowedBooks(int userId) {
         return transactionDAO.getStudentBorrowedBooks(userId);
+    }
+    
+    // student history card
+    public List<StudentHistoryDTO> getStudentHistory(int userId) {
+        return transactionDAO.getStudentHistory(userId);
     }
 }
  
