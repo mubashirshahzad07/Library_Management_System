@@ -15,7 +15,6 @@ import java.awt.event.ActionListener;
 import java.util.List;
 
 /**
- * @since 16 May 2026
  * Handles the catalog window for librarians
  */
 public class LibrarianFrameCatalogCard implements ActionListener {
@@ -138,7 +137,8 @@ public class LibrarianFrameCatalogCard implements ActionListener {
             public Component getTableCellRendererComponent(JTable table, Object value,
                                                            boolean isSelected, boolean hasFocus, int row, int column) {
                 JLabel label = (JLabel) super.getTableCellRendererComponent(
-                        table, value, isSelected, hasFocus, row, column);
+                        table, value, isSelected, hasFocus, row, column
+                );
                 label.setHorizontalAlignment(JLabel.CENTER);
                 label.setBackground(new Color(0x388A7C));
                 label.setOpaque(true);
@@ -175,6 +175,11 @@ public class LibrarianFrameCatalogCard implements ActionListener {
 
         for (BookCatalogDTO book : books) {
             model.addRow(new Object[] {book.getTitle(), book.getAuthor(), book.getTotalCopies(), book.getAvailableCopies(), book.getStatus()});
+        }
+
+        if (model.getRowCount() == 0) {
+            JOptionPane.showMessageDialog(catalogCard, "No books found for \"" + keyword + "\"",
+                    "Search", JOptionPane.INFORMATION_MESSAGE);
         }
 
         if (scrollPane != null) {

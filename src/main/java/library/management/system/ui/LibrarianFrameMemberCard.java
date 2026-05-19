@@ -15,7 +15,6 @@ import java.awt.event.ActionListener;
 import java.util.List;
 
 /**
- * @since 16 May 2026
  * Handles the members window for librarians
  */
 public class LibrarianFrameMemberCard implements ActionListener {
@@ -163,11 +162,6 @@ public class LibrarianFrameMemberCard implements ActionListener {
             model.addRow(new Object[] {user.getName(), user.getUsername(), user.getIssuedBooks(), user.getStatus()});
         }
 
-//            if (model.getRowCount() == 0 && keyword != null && !keyword.isEmpty()) {
-//                JOptionPane.showMessageDialog(membersCard, "No members found for: " + keyword,
-//                        "Search", JOptionPane.INFORMATION_MESSAGE);
-//            }
-
         if (scrollPane != null) {
             scrollPane.getViewport().setBackground(new Color(0x212020));
             scrollPane.setBorder(BorderFactory.createEmptyBorder());
@@ -183,7 +177,7 @@ public class LibrarianFrameMemberCard implements ActionListener {
        }
 
        if (model.getRowCount() == 0 && keyword != null && !keyword.isEmpty()) {
-           JOptionPane.showMessageDialog(membersCard, "No members found for: " + keyword,
+           JOptionPane.showMessageDialog(membersCard, "No members found for \"" + keyword + "\"",
                    "Search", JOptionPane.INFORMATION_MESSAGE);
        }
 
