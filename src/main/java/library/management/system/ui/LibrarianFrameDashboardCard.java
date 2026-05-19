@@ -1,13 +1,18 @@
 package library.management.system.ui;
 
+import library.management.system.dto.IssuedBookDTO;
 import library.management.system.util.DBConnection;
+import library.management.system.service.TransactionService;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.sql.*;
+
+import java.util.List;
 
 /**
  * @since 04 May 2026
@@ -15,6 +20,9 @@ import java.sql.*;
  */
 public class LibrarianFrameDashboardCard {
     private final JPanel dashboardCard;
+    private DefaultTableModel model;
+    private JScrollPane scrollPane;
+    private final TransactionService transactionService = new TransactionService();
 
     public LibrarianFrameDashboardCard(JPanel dashboardCard) {
         this.dashboardCard = dashboardCard;
@@ -189,7 +197,7 @@ public class LibrarianFrameDashboardCard {
     }
 
     private void addCurrentlyIssuedBooksTable() {
-        DefaultTableModel model = new DefaultTableModel() {
+        model = new DefaultTableModel() {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -201,23 +209,7 @@ public class LibrarianFrameDashboardCard {
         model.addColumn("Due date");
         model.addColumn("Status");
 
-        String sql = "SELECT student_name, book_title, due_date, " +
-                "CASE WHEN due_date < CURDATE() THEN 'Overdue' ELSE 'Issued' END AS status " +
-                "FROM librarian_issued_books ORDER BY due_date ASC";
-        try (Connection conn = DBConnection.getConnection();
-             Statement st = conn.createStatement();
-             ResultSet rs = st.executeQuery(sql)) {
-            while (rs.next()) {
-                model.addRow(new Object[]{
-                        rs.getString("student_name"),
-                        rs.getString("book_title"),
-                        rs.getDate("due_date").toString(),
-                        rs.getString("status")
-                });
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        getIssuedBooks();
 
         JTable currentlyIssuedBooksTable = new JTable(model);
         JTableHeader header = currentlyIssuedBooksTable.getTableHeader();
@@ -260,7 +252,7 @@ public class LibrarianFrameDashboardCard {
         ));
 
         GridBagConstraints gbc = new GridBagConstraints();
-        JScrollPane scrollPane = new JScrollPane(currentlyIssuedBooksTable);
+        scrollPane = new JScrollPane(currentlyIssuedBooksTable);
         scrollPane.getViewport().setBackground(new Color(0x212020));
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         gbc.gridx = 0;
@@ -269,6 +261,20 @@ public class LibrarianFrameDashboardCard {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(10, 25, 30, 30);
         dashboardCard.add(scrollPane, gbc);
+    }
+
+    private void getIssuedBooks() {
+        model.setRowCount(0);
+        List<IssuedBookDTO> books = transactionService.getIssuedBooks();
+
+        for (IssuedBookDTO book : books) {
+            model.addRow(new Object[] {book.getUsername(), book.getBookTitle(), book.getDueDate(), book.getStatus()});
+        }
+
+        if (scrollPane != null) {
+            scrollPane.getViewport().setBackground(new Color(0x212020));
+            scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        }
     }
 
     private void addVerticalFiller() {
