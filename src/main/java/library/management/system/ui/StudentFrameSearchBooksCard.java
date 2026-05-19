@@ -1,7 +1,6 @@
 package library.management.system.ui;
 
 import library.management.system.dto.BookTableDTO;
-import library.management.system.model.Book;
 import library.management.system.model.User;
 import library.management.system.service.BookService;
 import library.management.system.util.DBConnection;
@@ -107,7 +106,7 @@ public class StudentFrameSearchBooksCard implements ActionListener {
         model.addColumn("Book title");
         model.addColumn("Author");
         model.addColumn("Available");
-        model.addColumn("Borrow");
+        model.addColumn("Book category");
 
         int buttonColumnIndex = 3;
 

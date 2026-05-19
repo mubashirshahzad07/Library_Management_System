@@ -1,7 +1,8 @@
 package library.management.system.ui;
 
 import library.management.system.model.User;
-import library.management.system.util.DBConnection;
+import library.management.system.service.TransactionService;
+import library.management.system.dto.StudentHistoryDTO;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -10,19 +11,23 @@ import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.sql.*;
 
+import java.util.List;
+
 /**
- * @since 03 May 2026
  * Records all the books that were previously borrowed by student
  */
 public class StudentFrameHistoryCard {
     private final JPanel historyCard;
-    private final int userId;
+    private User user;
+    private final TransactionService transactionService = new TransactionService();
+    private DefaultTableModel model;
+    private JScrollPane scrollPane;
 
     public StudentFrameHistoryCard(JPanel historyCard, User user) {
         this.historyCard = historyCard;
-        this.userId = user.getUserId();
+        this.user = user;
         this.addCardHeading();
-        this.addHistoryTable();
+        this.addHistoryTable(user.getUserId());
         this.addVerticalFiller();
     }
 
@@ -47,8 +52,8 @@ public class StudentFrameHistoryCard {
         historyCard.add(studentLabel, gbc);
     }
 
-    private void addHistoryTable() {
-        DefaultTableModel model = new DefaultTableModel() {
+    private void addHistoryTable(int userId) {
+        model = new DefaultTableModel() {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -60,27 +65,7 @@ public class StudentFrameHistoryCard {
         model.addColumn("Return date");
         model.addColumn("Fine");
 
-        String sql = "SELECT book_title, issue_date, return_date, " +
-                "COALESCE(fine_amount, 0) AS fine_amount " +
-                "FROM student_transaction_history " +
-                "WHERE user_id = ? AND status = 'RETURNED' " +
-                "ORDER BY return_date DESC";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userId);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                double fine = rs.getDouble("fine_amount");
-                model.addRow(new Object[]{
-                        rs.getString("book_title"),
-                        rs.getDate("issue_date").toString(),
-                        rs.getDate("return_date").toString(),
-                        fine > 0 ? "Rs " + (int) fine : "\u2013"
-                });
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        getHistoryTable(userId);
 
         JTable historyTable = new JTable(model);
         JTableHeader header = historyTable.getTableHeader();
@@ -114,7 +99,7 @@ public class StudentFrameHistoryCard {
         ));
 
         GridBagConstraints gbc = new GridBagConstraints();
-        JScrollPane scrollPane = new JScrollPane(historyTable);
+        scrollPane = new JScrollPane(historyTable);
         scrollPane.getViewport().setBackground(new Color(0x212020));
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         gbc.gridx = 0;
@@ -123,6 +108,20 @@ public class StudentFrameHistoryCard {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(5, 5, 5, 5);
         historyCard.add(scrollPane, gbc);
+    }
+
+    private void getHistoryTable(int userId) {
+        model.setRowCount(0);
+        List<StudentHistoryDTO> history = transactionService.getStudentHistory(userId);
+
+        for (StudentHistoryDTO entry : history) {
+            model.addRow(new Object[] {entry.getBookTitle(), entry.getIssueDate(), entry.getReturnDate(), entry.getFine()});
+        }
+
+        if (scrollPane != null) {
+            scrollPane.getViewport().setBackground(new Color(0x212020));
+            scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        }
     }
 
     private void addVerticalFiller() {
