@@ -1,6 +1,6 @@
 package library.management.system.dao;
  
-import library.management.system.dto.BookTableDTO;
+import library.management.system.dto.*;
 import library.management.system.model.Book;
 import library.management.system.util.DBConnection;
  
@@ -246,5 +246,92 @@ public class BookDAO {
             rs.getBoolean("is_active"),
             rs.getInt    ("available_copies")
         );
+    }
+    
+    // librarian book catalog table
+    public List<BookCatalogDTO> getBookCatalog() {
+
+        List<BookCatalogDTO> books = new ArrayList<>();
+
+        String sql = """
+            SELECT
+                title,
+                author,
+                total_copies,
+                available_copies
+            FROM Books
+            WHERE is_active = TRUE
+        """;
+
+        try (
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery()
+        ) {
+
+            while (rs.next()) {
+
+                BookCatalogDTO book = new BookCatalogDTO(
+                        rs.getString("title"),
+                        rs.getString("author"),
+                        rs.getInt("total_copies"),
+                        rs.getInt("available_copies")
+                );
+
+                books.add(book);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to load book catalog");
+        }
+
+        return books;
+    }
+    
+    // search librarian book catalog
+    public List<BookCatalogDTO> searchBookCatalog(String keyword) {
+
+        List<BookCatalogDTO> books = new ArrayList<>();
+
+        String sql = """
+            SELECT title, author, total_copies, available_copies
+            FROM Books
+            WHERE is_active = TRUE
+            AND (
+                title LIKE ?
+                OR author LIKE ?
+            )
+        """;
+
+        try (
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+            String search = "%" + keyword + "%";
+
+            stmt.setString(1, search);
+            stmt.setString(2, search);
+
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+
+                BookCatalogDTO book = new BookCatalogDTO(
+                        rs.getString("title"),
+                        rs.getString("author"),
+                        rs.getInt("total_copies"),
+                        rs.getInt("available_copies")
+                );
+
+                books.add(book);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to search book catalog");
+        }
+
+        return books;
     }
 }

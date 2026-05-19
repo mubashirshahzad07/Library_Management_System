@@ -6,7 +6,7 @@ import library.management.system.dao.UserDAO;
 import library.management.system.model.Transaction;
 import library.management.system.model.User;
 import library.management.system.model.Book;
-import library.management.system.dto.TransactionReportDTO;
+import library.management.system.dto.*;
  
 import java.util.Date;
 import java.util.List;
@@ -123,6 +123,16 @@ public boolean returnBook(String bookTitleOrIsbn, String memberUsername) {
     // search transactions
     public List<TransactionReportDTO> searchTransactionReports(String keyword) {
         return transactionDAO.searchTransactionReports(keyword);
+    }
+    
+    // librarian dashboard issued books
+    public List<IssuedBookDTO> getIssuedBooks() {
+        return transactionDAO.getIssuedBooks();
+    }
+    
+    // get student borrowed books
+    public List<StudentBorrowedBookDTO> getStudentBorrowedBooks(int userId) {
+        return transactionDAO.getStudentBorrowedBooks(userId);
     }
 }
  

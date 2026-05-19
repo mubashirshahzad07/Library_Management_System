@@ -2,7 +2,7 @@ package library.management.system.dao;
  
 import library.management.system.model.Transaction;
 import library.management.system.util.DBConnection;
-import library.management.system.dto.TransactionReportDTO;
+import library.management.system.dto.*;
  
 import java.sql.*;
 import java.util.ArrayList;
@@ -338,5 +338,87 @@ public boolean returnBook(String bookTitleOrIsbn, String memberUsername) {
             }
 
         return reports;
+    }
+    
+    // librarian dashboard issued books
+    public List<IssuedBookDTO> getIssuedBooks() {
+
+        List<IssuedBookDTO> books = new ArrayList<>();
+
+        String sql = """
+            SELECT u.username, b.title AS book_title, t.due_date, t.status
+            FROM Transactions t
+            JOIN Users u
+                ON t.user_id = u.user_id
+            JOIN Books b
+                ON t.book_id = b.book_id
+            WHERE t.status = 'ISSUED'
+        """;
+
+        try (
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery()
+        ) {
+
+            while (rs.next()) {
+
+                IssuedBookDTO book = new IssuedBookDTO(
+                        rs.getString("username"),
+                        rs.getString("book_title"),
+                        rs.getDate("due_date"),
+                        rs.getString("status")
+                );
+
+                books.add(book);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to load issued books");
+        }
+
+        return books;
+    }
+    
+    // return student borrowed books 
+    public List<StudentBorrowedBookDTO> getStudentBorrowedBooks(int userId) {
+
+        List<StudentBorrowedBookDTO> books = new ArrayList<>();
+
+        String sql = """
+            SELECT b.title, b.author, t.issue_date, t.due_date
+            FROM Transactions t
+            JOIN Books b
+                ON t.book_id = b.book_id
+            WHERE t.user_id = ?
+            AND t.status = 'ISSUED'
+        """;
+
+        try (
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+            stmt.setInt(1, userId);
+
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                StudentBorrowedBookDTO book = new StudentBorrowedBookDTO(
+                                rs.getString("title"),
+                                rs.getString("author"),
+                                rs.getDate("issue_date"),
+                                rs.getDate("due_date")
+                        );
+
+                books.add(book);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to load borrowed books");
+        }
+
+        return books;
     }
 }

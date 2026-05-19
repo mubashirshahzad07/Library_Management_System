@@ -1,5 +1,6 @@
 package library.management.system.ui;
 
+import library.management.system.dto.BookCatalogDTO;
 import library.management.system.dto.BookTableDTO;
 import library.management.system.model.Book;
 import library.management.system.service.BookService;
@@ -14,7 +15,6 @@ import java.awt.event.ActionListener;
 import java.util.List;
 
 /**
- * @since 16 May 2026
  * Handles the catalog window for librarians
  */
 public class LibrarianFrameCatalogCard implements ActionListener {
@@ -24,7 +24,6 @@ public class LibrarianFrameCatalogCard implements ActionListener {
     private DefaultTableModel model;
     private JScrollPane scrollPane;
     private JTable catalogTable;
-
     private final BookService bookService = new BookService();
 
     public LibrarianFrameCatalogCard(JPanel catalogCard) {
@@ -98,14 +97,13 @@ public class LibrarianFrameCatalogCard implements ActionListener {
             }
         };
 
-        model.addColumn("Title");
+        model.addColumn("Book title");
         model.addColumn("Author");
         model.addColumn("Total Copies");
         model.addColumn("Available Copies");
         model.addColumn("Status");
 
-        // Load all books on startup
-        populateTable(null);
+        getAllBooks();
 
         catalogTable = new JTable(model);
         applyTableStyling();
@@ -139,7 +137,8 @@ public class LibrarianFrameCatalogCard implements ActionListener {
             public Component getTableCellRendererComponent(JTable table, Object value,
                                                            boolean isSelected, boolean hasFocus, int row, int column) {
                 JLabel label = (JLabel) super.getTableCellRendererComponent(
-                        table, value, isSelected, hasFocus, row, column);
+                        table, value, isSelected, hasFocus, row, column
+                );
                 label.setHorizontalAlignment(JLabel.CENTER);
                 label.setBackground(new Color(0x388A7C));
                 label.setOpaque(true);
@@ -156,27 +155,31 @@ public class LibrarianFrameCatalogCard implements ActionListener {
         });
     }
 
-    private void populateTable(String keyword) {
+    private void getAllBooks() {
         model.setRowCount(0);
-        try {
-            if (keyword == null || keyword.isEmpty()) {
-                List<Book> books = bookService.getAllBooks();
+        List<BookCatalogDTO> books = bookService.getBookCatalog();
 
-                for (Book b : books) {
-                    String status = b.getAvailableCopies() > 0 ? "Available" : "Unavailable";
-                    model.addRow(new Object[]{b.getTitle(), b.getAuthor(), b.getTotalCopies(), b.getAvailableCopies(), status});
-                }
+        for (BookCatalogDTO book : books) {
+            model.addRow(new Object[] {book.getTitle(), book.getAuthor(), book.getTotalCopies(), book.getAvailableCopies(), book.getStatus()});
+        }
 
-            } else {
-                List<BookTableDTO> books = bookService.searchBooks(keyword);
+        if (scrollPane != null) {
+            scrollPane.getViewport().setBackground(new Color(0x212020));
+            scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        }
+    }
 
-                for (BookTableDTO b : books) {
-                    String status = b.getTotalCopies() > 0 ? "Available" : "Unavailable";
-                    model.addRow(new Object[]{b.getTitle(), b.getAuthor(), b.getTotalCopies(), status});
-                }
-            }
-        } catch (RuntimeException e) {
-            JOptionPane.showMessageDialog(catalogCard, e.getMessage(), "Search", JOptionPane.INFORMATION_MESSAGE);
+    private void getSearchedBooks(String keyword) {
+        model.setRowCount(0);
+        List<BookCatalogDTO> books = bookService.searchBookCatalog(keyword);
+
+        for (BookCatalogDTO book : books) {
+            model.addRow(new Object[] {book.getTitle(), book.getAuthor(), book.getTotalCopies(), book.getAvailableCopies(), book.getStatus()});
+        }
+
+        if (model.getRowCount() == 0) {
+            JOptionPane.showMessageDialog(catalogCard, "No books found for \"" + keyword + "\"",
+                    "Search", JOptionPane.INFORMATION_MESSAGE);
         }
 
         if (scrollPane != null) {
@@ -198,7 +201,7 @@ public class LibrarianFrameCatalogCard implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == searchButton) {
             String keyword = searchBox.getText().strip();
-            populateTable(keyword);
+            getSearchedBooks(keyword);
         }
     }
 }

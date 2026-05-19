@@ -104,10 +104,10 @@ public class StudentFrameSearchBooksCard implements ActionListener {
             }
         };
 
-        model.addColumn("Title");
+        model.addColumn("Book title");
         model.addColumn("Author");
         model.addColumn("Available");
-        model.addColumn("");
+        model.addColumn("Borrow");
 
         int buttonColumnIndex = 3;
 
