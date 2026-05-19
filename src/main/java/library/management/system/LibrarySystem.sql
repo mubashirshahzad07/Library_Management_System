@@ -86,7 +86,6 @@ JOIN Books b ON t.book_id = b.book_id
 WHERE t.status = 'ISSUED' AND u.is_active = TRUE AND b.is_active = TRUE;
 
 CREATE VIEW fines_report AS
--- Returned late books (stored fines)
 SELECT
     t.transaction_id,
     u.username AS student_username,
@@ -102,7 +101,6 @@ JOIN Books b ON t.book_id = b.book_id
 
 UNION
 
--- Currently overdue books (dynamic fines)
 SELECT
     t.transaction_id,
     u.username AS student_username,
@@ -118,9 +116,24 @@ WHERE t.status = 'ISSUED' AND t.due_date < CURDATE();
 
 INSERT INTO Users (name, username, password, role) VALUES
 ('Mubashir Shahzad', 'Mubashir_Librarian', 'admin123', 'LIBRARIAN'),
-('Shumaail Ali', 'Shumaail_Student', 'study123', 'STUDENT');
+('Shumaail Ali', 'Shumaail_Student', 'study123', 'STUDENT'),
+('Waqas Noori', 'Waqas_Student', 'waqas123', 'STUDENT'),
+('Hamza Waqas', 'Hamza_Student', 'hamza789', 'STUDENT'),
+('Hassan Haider', 'Hassan_Librarian', 'hassan456', 'LIBRARIAN'),
+('Muhammad Hisham', 'Hisham_Student', 'hisham123', 'STUDENT'),
+('Bashi Shahzad', 'Bashi_Librarian', 'bashipass', 'LIBRARIAN'),
+('Hadeed Faisal', 'Hadeed_Student', 'hadeed555', 'STUDENT'),
+('Muhammad Abuzar', 'Abuzar_Student', 'abuzar99', 'STUDENT'),
+('Sohaib Sarwar', 'Sohaib_Student', 'sohaib443', 'STUDENT');
 
 INSERT INTO Books (isbn, title, author, category, total_copies, available_copies) VALUES
 ('55-1579', 'The Maze Runner', 'James Dashner', 'Sci-fi', 5, 5),
 ('54-0857', 'Peer-e-Kamil', 'Umera Ahmed', 'Novel', 3, 3),
-('55-5094', 'The Hobbit', 'Tolkien', 'Fantasy', 4, 4);
+('55-5094', 'The Hobbit', 'Tolkien', 'Fantasy', 4, 4),
+('978-0310', 'Atomic Habits', 'James Clear', 'Other', 6, 6),
+('978-0140', 'Black Beauty', 'Anna Sewell', 'Literature', 4, 4),
+('978-01404', 'Crime and Punishment', 'Fyodor Dostoevsky', 'Philosophy', 3, 3),
+('978-01413', 'The Six of Crows', 'Leigh Bardugo', 'Fantasy', 5, 5),
+('978-0062', 'The Poppy War', 'R.F. Kuang', 'History', 4, 4),
+('978-15944', 'A Thousand Splendid Suns', 'Khaled Hosseini', 'Literature', 5, 5),
+('978-159448', 'The Kite Runner', 'Khaled Hosseini', 'Literature', 3, 3);
