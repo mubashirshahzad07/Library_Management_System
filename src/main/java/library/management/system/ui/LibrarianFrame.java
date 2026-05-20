@@ -7,7 +7,6 @@ import java.awt.*;
 import java.awt.event.*;
 
 /**
- * @since 04 May 2026
  * Handles the Librarian Window
  */
 public class LibrarianFrame extends JFrame implements ActionListener {

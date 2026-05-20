@@ -9,7 +9,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 /**
- * @since 15 May 2026
  * Handles the login window
  */
 public class LoginFrame extends JFrame implements ActionListener {

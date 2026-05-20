@@ -17,7 +17,6 @@ import java.sql.*;
 import java.util.List;
 
 /**
- * @since 15 May 2026
  * Handles how students can search for and borrow books
  */
 public class StudentFrameSearchBooksCard implements ActionListener {

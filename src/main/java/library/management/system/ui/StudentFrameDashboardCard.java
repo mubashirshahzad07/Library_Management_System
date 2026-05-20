@@ -1,10 +1,10 @@
 package library.management.system.ui;
 
 import library.management.system.dto.StudentBorrowedBookDTO;
-import library.management.system.model.Student;
 import library.management.system.model.User;
 import library.management.system.util.DBConnection;
 import library.management.system.service.TransactionService;
+import library.management.system.service.FineService;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -20,14 +20,15 @@ import java.util.List;
  */
 public class StudentFrameDashboardCard {
     private final JPanel dashboardCard;
-    private final int userId;
+    private final User user;
     private JScrollPane scrollPane;
     private DefaultTableModel model;
     private final TransactionService transactionService = new TransactionService();
+    private final FineService fineService = new FineService();
 
     public StudentFrameDashboardCard(JPanel dashboardCard, User user) {
         this.dashboardCard = dashboardCard;
-        this.userId = user.getUserId();
+        this.user = user;
         this.addCardHeader();
         this.addBooksReturnInformation();
         this.addBooksBorrowedPanel();
@@ -65,35 +66,14 @@ public class StudentFrameDashboardCard {
         booksReturnInformation.setBorder(BorderFactory.createEmptyBorder(15, 30, 15, 10));
         booksReturnInformation.setFont(new Font("FiraMono NerdFont", Font.PLAIN, 15));
 
-        String sql = "SELECT b.title, t.due_date, " +
-                "CASE WHEN t.due_date < CURDATE() THEN 1 ELSE 0 END AS overdue " +
-                "FROM Transactions t JOIN Books b ON t.book_id = b.book_id " +
-                "WHERE t.user_id = ? AND t.status = 'ISSUED' " +
-                "ORDER BY overdue DESC, t.due_date ASC LIMIT 1";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                String title   = rs.getString("title");
-                Date dueDate   = rs.getDate("due_date");
-                boolean overdue = rs.getInt("overdue") == 1;
-                if (overdue) {
-                    booksReturnInformation.setForeground(Color.WHITE);
-                    booksReturnInformation.setBackground(new Color(0xF59E0B));
-                    booksReturnInformation.setText(title + " is overdue since " + dueDate + " \u23AF please return the book immediately.");
-                } else {
-                    booksReturnInformation.setBackground(new Color(0xF0E526));
-                    booksReturnInformation.setText(title + " is due on " + dueDate + " \u23AF please return on time.");
-                }
-            } else {
-                booksReturnInformation.setBackground(new Color(0x29CF45));
-                booksReturnInformation.setText("No books currently borrowed.");
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            booksReturnInformation.setBackground(new Color(0xF0E526));
-            booksReturnInformation.setText("Could not load book due date information.");
+        int booksCurrentlyBorrowed = transactionService.getCurrentlyBorrowedBooksCount(user.getUserId());
+        if (booksCurrentlyBorrowed > 0) {
+            booksReturnInformation.setForeground(Color.WHITE);
+            booksReturnInformation.setBackground(new Color(0xF59E0B));
+            booksReturnInformation.setText(booksCurrentlyBorrowed + " book(s) borrowed" +  " ⎯ please return on time.");
+        } else {
+            booksReturnInformation.setBackground(new Color(0x29CF45));
+            booksReturnInformation.setText("No books currently borrowed.");
         }
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -122,8 +102,7 @@ public class StudentFrameDashboardCard {
         gbc.gridy = 0;
         booksBorrowedPanel.add(booksBorrowedLabel, gbc);
 
-        int noOfBooksBorrowed = fetchCount(
-                "SELECT COUNT(*) FROM Transactions WHERE user_id = ? AND status = 'ISSUED'");
+        int noOfBooksBorrowed = transactionService.getTotalIssuedBooksCount(user.getUserId());
         JLabel noOfBooksBorrowedLabel = new JLabel(String.valueOf(noOfBooksBorrowed));
         noOfBooksBorrowedLabel.setFont(new Font("FiraMono NerdFont", Font.BOLD, 25));
         noOfBooksBorrowedLabel.setForeground(Color.WHITE);
@@ -155,8 +134,7 @@ public class StudentFrameDashboardCard {
         gbc.gridy = 0;
         booksReturnedPanel.add(booksReturnedLabel, gbc);
 
-        int noOfBooksReturned = fetchCount(
-                "SELECT COUNT(*) FROM Transactions WHERE user_id = ? AND status = 'RETURNED'");
+        int noOfBooksReturned = transactionService.getTotalReturnedBooksCount(user.getUserId());
         JLabel noOfBooksReturnedLabel = new JLabel(String.valueOf(noOfBooksReturned));
         noOfBooksReturnedLabel.setFont(new Font("FiraMono NerdFont", Font.BOLD, 25));
         noOfBooksReturnedLabel.setForeground(Color.WHITE);
@@ -189,7 +167,7 @@ public class StudentFrameDashboardCard {
         gbc.anchor = GridBagConstraints.WEST;
         finesPanel.add(finesLabel, gbc);
 
-        double fineAmount = fetchFineAmount();
+        double fineAmount = fineService.getTotalFinesByUsername(user.getUsername());
         JLabel fineAmountLabel = new JLabel("Rs " + (int) fineAmount);
         fineAmountLabel.setFont(new Font("FiraMono NerdFont", Font.BOLD, 25));
         fineAmountLabel.setForeground(Color.WHITE);
@@ -303,7 +281,7 @@ public class StudentFrameDashboardCard {
     private int fetchCount(String sql) {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userId);
+            ps.setInt(1, user.getUserId());
             ResultSet rs = ps.executeQuery();
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {
@@ -316,7 +294,7 @@ public class StudentFrameDashboardCard {
         String sql = "SELECT COALESCE(SUM(fine_amount), 0) FROM Fines WHERE user_id = ? AND payment_status = 'UNPAID'";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userId);
+            ps.setInt(1, user.getUserId());
             ResultSet rs = ps.executeQuery();
             if (rs.next()) return rs.getDouble(1);
         } catch (SQLException e) {

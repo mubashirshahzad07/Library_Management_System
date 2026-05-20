@@ -7,7 +7,6 @@ import java.awt.*;
 import java.awt.event.*;
 
 /**
- * @since 28 April 2026
  * Handles the Student Window
  */
 public class StudentFrame extends JFrame implements ActionListener {

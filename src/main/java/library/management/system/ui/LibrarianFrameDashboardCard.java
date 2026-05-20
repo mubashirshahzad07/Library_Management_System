@@ -1,11 +1,9 @@
 package library.management.system.ui;
 
 import library.management.system.dto.IssuedBookDTO;
-import library.management.system.util.DBConnection;
 import library.management.system.service.TransactionService;
 
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
@@ -63,7 +61,7 @@ public class LibrarianFrameDashboardCard {
         booksReturnInformation.setBorder(BorderFactory.createEmptyBorder(15, 30, 15, 10));
         booksReturnInformation.setFont(new Font("FiraMono NerdFont", Font.PLAIN, 15));
 
-        int overdueCount = fetchOverdueCount();
+        int overdueCount = transactionService.getOverdueBooksTodayCount();
         if (overdueCount > 0) {
             booksReturnInformation.setForeground(Color.WHITE);
             booksReturnInformation.setBackground(new Color(0xF59E0B));
@@ -100,7 +98,7 @@ public class LibrarianFrameDashboardCard {
         gbc.gridy = 0;
         booksIssuedToday.add(booksIssuedTodayLabel, gbc);
 
-        int noOfBooksIssued = fetchIssuedTodayCount();
+        int noOfBooksIssued = transactionService.getBooksIssuedTodayCount();
         JLabel noOfBooksBorrowedLabel = new JLabel(String.valueOf(noOfBooksIssued));
         noOfBooksBorrowedLabel.setFont(new Font("FiraMono NerdFont", Font.BOLD, 25));
         noOfBooksBorrowedLabel.setForeground(Color.WHITE);
@@ -132,7 +130,7 @@ public class LibrarianFrameDashboardCard {
         gbc.gridy = 0;
         booksReturnedToday.add(booksReturnedLabel, gbc);
 
-        int noOfBooksReturned = fetchReturnedTodayCount();
+        int noOfBooksReturned = transactionService.getReturnsTodayCount();
         JLabel noOfBooksReturnedLabel = new JLabel(String.valueOf(noOfBooksReturned));
         noOfBooksReturnedLabel.setFont(new Font("FiraMono NerdFont", Font.BOLD, 25));
         noOfBooksReturnedLabel.setForeground(Color.WHITE);
@@ -165,7 +163,7 @@ public class LibrarianFrameDashboardCard {
         gbc.anchor = GridBagConstraints.WEST;
         overdue.add(overdueLabel, gbc);
 
-        int overdueBooks = fetchOverdueCount();
+        int overdueBooks = transactionService.getTotalOverdueBooksCount();
         JLabel overdueBooksLabel = new JLabel(String.valueOf(overdueBooks));
         overdueBooksLabel.setFont(new Font("FiraMono NerdFont", Font.BOLD, 25));
         overdueBooksLabel.setForeground(Color.WHITE);
@@ -291,31 +289,5 @@ public class LibrarianFrameDashboardCard {
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.VERTICAL;
         dashboardCard.add(Box.createVerticalGlue(), gbc);
-    }
-
-    private int fetchIssuedTodayCount() {
-        String sql = "SELECT COUNT(*) FROM Transactions WHERE issue_date = CURDATE() AND status = 'ISSUED'";
-        return fetchCount(sql);
-    }
-
-    private int fetchReturnedTodayCount() {
-        String sql = "SELECT COUNT(*) FROM Transactions WHERE return_date = CURDATE() AND status = 'RETURNED'";
-        return fetchCount(sql);
-    }
-
-    private int fetchOverdueCount() {
-        String sql = "SELECT COUNT(*) FROM Transactions WHERE return_date IS NULL AND due_date < CURDATE() AND status = 'ISSUED'";
-        return fetchCount(sql);
-    }
-
-    private int fetchCount(String sql) {
-        try (Connection conn = DBConnection.getConnection();
-             Statement st = conn.createStatement();
-             ResultSet rs = st.executeQuery(sql)) {
-            if (rs.next()) return rs.getInt(1);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return 0;
     }
 }
