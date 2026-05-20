@@ -333,4 +333,29 @@ public class UserDAO {
 
         return members;
     }
+    
+    // admin active users count panel
+    public int getActiveUsersCount() {
+        String sql = """
+            SELECT COUNT(*)
+            FROM Users
+            WHERE is_active = TRUE
+        """;
+
+        try (
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery()
+        ) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to load user count");
+        }
+
+        return 0;
+    }
 }

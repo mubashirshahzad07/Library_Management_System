@@ -144,5 +144,40 @@ public class TransactionService {
     public List<StudentHistoryDTO> getStudentHistory(int userId) {
         return transactionDAO.getStudentHistory(userId);
     }
+    
+    // librarian dashboard panels
+    public int getOverdueBooksTodayCount() {
+        return transactionDAO.getOverdueBooksTodayCount();
+    }
+
+    public int getBooksIssuedTodayCount() {
+        return transactionDAO.getBooksIssuedTodayCount();
+    }
+
+    public int getReturnsTodayCount() {
+        return transactionDAO.getReturnsTodayCount();
+    }
+
+    public int getTotalOverdueBooksCount() {
+        return transactionDAO.getTotalOverdueBooksCount();
+    }
+    
+    // student dashboard panels
+    public int getCurrentlyBorrowedBooksCount(int userId) {
+        return transactionDAO.getCurrentlyBorrowedBooksCount(userId);
+    }
+
+    public int getTotalIssuedBooksCount(int userId) {
+        return transactionDAO.getTotalIssuedBooksCount(userId);
+    }
+
+    public int getTotalReturnedBooksCount(int userId) {
+        return transactionDAO.getTotalReturnedBooksCount(userId);
+    }
+    
+    // admin active loans panel
+    public int getActiveLoansCount() {
+        return transactionDAO.getActiveLoansCount();
+    }
 }
  

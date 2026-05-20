@@ -417,4 +417,29 @@ public class BookDAO {
 
         return books;
     }
+    
+    // admin total books panel
+    public int getTotalActiveBooksCount() {
+        String sql = """
+            SELECT COUNT(*)
+            FROM Books
+            WHERE is_active = TRUE
+        """;
+
+        try (
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery()
+        ) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to load book count");
+        }
+
+        return 0;
+    }
 }
