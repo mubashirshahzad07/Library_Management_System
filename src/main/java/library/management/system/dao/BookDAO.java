@@ -334,4 +334,87 @@ public class BookDAO {
 
         return books;
     }
+    
+    // get books for student catalog
+    public List<StudentBookCatalogDTO> getStudentBookCatalog() {
+
+        List<StudentBookCatalogDTO> books = new ArrayList<>();
+
+        String sql = """
+            SELECT author, title, category, available_copies 
+            FROM Books WHERE is_active = TRUE
+        """;
+
+        try (
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery()
+        ) {
+            while (rs.next()) {
+                
+                StudentBookCatalogDTO book = new StudentBookCatalogDTO(
+                        rs.getString("author"),
+                        rs.getString("title"),
+                        rs.getString("category"),
+                        rs.getInt("available_copies")
+                );
+                
+                books.add(book);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to load student book catalog");
+        }
+
+        return books;
+    }
+    
+    // search student books
+    public List<StudentBookCatalogDTO> searchStudentBookCatalog(String keyword) {
+
+        List<StudentBookCatalogDTO> books = new ArrayList<>();
+
+        String sql = """
+            SELECT author, title, category, available_copies
+            FROM Books WHERE is_active = TRUE
+            AND (
+                author LIKE ?
+                OR title LIKE ?
+                OR category LIKE ?
+            )
+        """;
+
+        try (
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+
+            String search = "%" + keyword + "%";
+
+            stmt.setString(1, search);
+            stmt.setString(2, search);
+            stmt.setString(3, search);
+
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+
+                StudentBookCatalogDTO book = new StudentBookCatalogDTO(
+                        rs.getString("author"),
+                        rs.getString("title"),
+                        rs.getString("category"),
+                        rs.getInt("available_copies")
+                );
+
+                books.add(book);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to search student book catalog");
+        }
+
+        return books;
+    }
 }

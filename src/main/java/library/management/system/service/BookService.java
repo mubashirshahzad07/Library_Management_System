@@ -112,7 +112,7 @@ public List<BookTableDTO> searchBooks(String keyword) {
             List<BookCatalogDTO> allBooks = bookDAO.getBookCatalog();
             List<BookCatalogDTO> filteredBooks = new ArrayList<>();
             
-            // get all books then filter on keyword
+            // get all books then filter on availability status
             for (BookCatalogDTO book : allBooks) {                       
                 if (book.getStatus().equalsIgnoreCase(keyword)) {
                     filteredBooks.add(book);
@@ -123,5 +123,35 @@ public List<BookTableDTO> searchBooks(String keyword) {
         }
         // if book is searched based on title or author
         return bookDAO.searchBookCatalog(keyword);
+    }
+    
+    // Return books for student book catalog
+    public List<StudentBookCatalogDTO> getStudentBookCatalog() {
+        return bookDAO.getStudentBookCatalog();
+    }
+    
+    public List<StudentBookCatalogDTO> searchStudentBookCatalog(String keyword) {
+
+        keyword = keyword.trim();
+
+        // availability filtering
+        if (keyword.equalsIgnoreCase("available") || keyword.equalsIgnoreCase("unavailable")) {
+
+            List<StudentBookCatalogDTO> books = bookDAO.getStudentBookCatalog();
+
+            List<StudentBookCatalogDTO> filteredBooks = new ArrayList<>();
+
+            for (StudentBookCatalogDTO book : books) {
+
+                if (book.getAvailability().equalsIgnoreCase(keyword)) {
+                    filteredBooks.add(book);
+                }
+            }
+
+            return filteredBooks;
+        }
+
+        // if searched by title, author or category
+        return bookDAO.searchStudentBookCatalog(keyword);
     }
 }
