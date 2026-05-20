@@ -65,7 +65,6 @@ public int returnBook(String bookTitleOrIsbn, String memberUsername) {
         ResultSet rs = findPs.executeQuery();
 
         if (!rs.next()) {
-            System.out.println("No active transaction found for the given book and member.");
             return -1;
         }
 
@@ -74,20 +73,19 @@ public int returnBook(String bookTitleOrIsbn, String memberUsername) {
         try (PreparedStatement updatePs = conn.prepareStatement(updateSql)) {
             updatePs.setDate(1, new java.sql.Date(System.currentTimeMillis()));
             updatePs.setInt(2, transactionId);
-            
+
             int rowsAffected = updatePs.executeUpdate();
 
             if (rowsAffected > 0) {
                 return transactionId;
+            } else {
+                throw new RuntimeException("Operation failed");
             }
         }
 
     } catch (SQLException e) {
-        e.printStackTrace();
-        throw new RuntimeException("No active issued transaction found");
+        throw new RuntimeException("Operation failed", e);
     }
-    
-    return -1;
 }
  
     // ── Find a single transaction by ID ──────────────────────────────────────
