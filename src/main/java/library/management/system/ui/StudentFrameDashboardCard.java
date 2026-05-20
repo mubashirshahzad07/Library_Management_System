@@ -88,7 +88,7 @@ public class StudentFrameDashboardCard {
                 }
             } else {
                 booksReturnInformation.setBackground(new Color(0x29CF45));
-                booksReturnInformation.setText("No books currently issued.");
+                booksReturnInformation.setText("No books currently borrowed.");
             }
         } catch (SQLException e) {
             e.printStackTrace();

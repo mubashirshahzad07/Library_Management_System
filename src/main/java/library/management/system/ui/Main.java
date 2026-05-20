@@ -1,7 +1,6 @@
 package library.management.system.ui;
 
 /**
- * @since 29 April 2026
  * Runs the application
  */
 public class Main {

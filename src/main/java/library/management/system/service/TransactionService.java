@@ -62,7 +62,7 @@ public class TransactionService {
         Date dueDate   = new Date(issueDate.getTime() + TimeUnit.DAYS.toMillis(14));
  
         Transaction transaction = new Transaction(
-            userId, book.getBookId(),
+            0, userId, book.getBookId(),
             issueDate, dueDate,
             null,    // return_date: null until returned
             "ISSUED"

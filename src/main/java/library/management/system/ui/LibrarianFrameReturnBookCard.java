@@ -1,18 +1,17 @@
 package library.management.system.ui;
 
-import library.management.system.util.DBConnection;
+import library.management.system.service.TransactionService;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.sql.*;
 
 /**
- * @since 16 May 2026
  * Handles the return book window
  */
 public class LibrarianFrameReturnBookCard {
     private final JPanel returnBookCard;
+    private final TransactionService transactionService = new TransactionService();
 
     LibrarianFrameReturnBookCard(JPanel returnBookCard) {
         this.returnBookCard = returnBookCard;
@@ -149,98 +148,11 @@ public class LibrarianFrameReturnBookCard {
         returnBookCard.add(returnBookPanel, gbc);
     }
 
-    /**
-     * Marks the transaction as RETURNED, sets return_date to today, increments
-     * available_copies, and inserts a Fine record if the book is overdue (Rs 1/day).
-     */
-    private void returnBook(String memberUsername, String bookQuery) {
-        try (Connection conn = DBConnection.getConnection()) {
-            conn.setAutoCommit(false);
-
-            int userId = -1;
-            try (PreparedStatement ps = conn.prepareStatement(
-                    "SELECT user_id FROM Users WHERE username = ? AND role = 'STUDENT' AND is_active = TRUE")) {
-                ps.setString(1, memberUsername);
-                ResultSet rs = ps.executeQuery();
-                if (rs.next()) userId = rs.getInt("user_id");
-            }
-            if (userId == -1) {
-                JOptionPane.showMessageDialog(returnBookCard,
-                        "Student not found: " + memberUsername, "Error", JOptionPane.ERROR_MESSAGE);
-                conn.rollback();
-                return;
-            }
-
-            int transactionId = -1;
-            int bookId        = -1;
-            Date dueDate      = null;
-
-            String tranSql = "SELECT t.transaction_id, t.book_id, t.due_date " +
-                    "FROM Transactions t " +
-                    "JOIN Books b ON t.book_id = b.book_id " +
-                    "WHERE t.user_id = ? AND t.status = 'ISSUED' " +
-                    "AND (LOWER(b.title) LIKE ? OR b.isbn = ?)";
-            try (PreparedStatement ps = conn.prepareStatement(tranSql)) {
-                ps.setInt(1, userId);
-                ps.setString(2, "%" + bookQuery.toLowerCase() + "%");
-                ps.setString(3, bookQuery);
-                ResultSet rs = ps.executeQuery();
-                if (rs.next()) {
-                    transactionId = rs.getInt("transaction_id");
-                    bookId        = rs.getInt("book_id");
-                    dueDate       = rs.getDate("due_date");
-                }
-            }
-            if (transactionId == -1) {
-                JOptionPane.showMessageDialog(returnBookCard,
-                        "No active issue found for this member + book combination.",
-                        "Not Found", JOptionPane.WARNING_MESSAGE);
-                conn.rollback();
-                return;
-            }
-
-            Date today = Date.valueOf(java.time.LocalDate.now());
-
-            try (PreparedStatement ps = conn.prepareStatement(
-                    "UPDATE Transactions SET status = 'RETURNED', return_date = ? WHERE transaction_id = ?")) {
-                ps.setDate(1, today);
-                ps.setInt(2, transactionId);
-                ps.executeUpdate();
-            }
-
-            try (PreparedStatement ps = conn.prepareStatement(
-                    "UPDATE Books SET available_copies = available_copies + 1 WHERE book_id = ?")) {
-                ps.setInt(1, bookId);
-                ps.executeUpdate();
-            }
-
-            long overdueDays = 0;
-            double fineAmount = 0;
-            if (today.after(dueDate)) {
-                overdueDays = (today.getTime() - dueDate.getTime()) / (1000L * 60 * 60 * 24);
-                fineAmount = overdueDays * 5.0;
-                try (PreparedStatement ps = conn.prepareStatement(
-                        "INSERT INTO Fines (transaction_id, user_id, fine_amount, payment_status) VALUES (?, ?, ?, 'UNPAID')")) {
-                    ps.setInt(1, transactionId);
-                    ps.setInt(2, userId);
-                    ps.setDouble(3, fineAmount);
-                    ps.executeUpdate();
-                }
-            }
-
-            conn.commit();
-
-            String msg = "<html><font color='green'>Book returned successfully!</font>";
-            if (fineAmount > 0) {
-                msg += "<br><font color='red'>Fine charged: Rs " + (int) fineAmount + " (" + (int)(overdueDays) + " days overdue)</font>";
-            }
-            msg += "</html>";
-            JOptionPane.showMessageDialog(returnBookCard, msg, "Return", JOptionPane.INFORMATION_MESSAGE);
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(returnBookCard, "Database error: " + e.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+    private void returnBook(String username, String bookQuery) {
+        try {
+            transactionService.returnBook(username, bookQuery);
+        } catch (RuntimeException e) {
+            JOptionPane.showMessageDialog(returnBookCard, e.getMessage(), "Validation", JOptionPane.WARNING_MESSAGE);
         }
     }
 

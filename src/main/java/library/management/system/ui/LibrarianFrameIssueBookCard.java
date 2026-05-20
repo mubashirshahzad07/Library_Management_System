@@ -1,6 +1,6 @@
 package library.management.system.ui;
 
-import library.management.system.util.DBConnection;
+import library.management.system.service.TransactionService;
 
 import javax.swing.*;
 import java.awt.*;
@@ -9,11 +9,11 @@ import java.awt.event.ActionListener;
 import java.sql.*;
 
 /**
- * @since 16 May 2026
  * Handles the issue book window
  */
 public class LibrarianFrameIssueBookCard {
     private final JPanel issueBookCard;
+    private final TransactionService transactionService = new TransactionService();
 
     LibrarianFrameIssueBookCard(JPanel issueBookCard) {
         this.issueBookCard = issueBookCard;
@@ -131,7 +131,7 @@ public class LibrarianFrameIssueBookCard {
                         return;
                     }
 
-                    issueBook(memberUsername, bookQuery, issueDate, dueDate);
+                    issueBook(memberUsername, bookQuery);
 
                     memberIdBox.setText("");
                     bookTitleBox.setText("");
@@ -228,93 +228,12 @@ public class LibrarianFrameIssueBookCard {
         issueBookCard.add(issueBookPanel, gbc);
     }
 
-    /**
-     * Inserts a Transaction row and decrements available_copies on the book.
-     * Accepts book title or ISBN as bookQuery.
-     */
-    private void issueBook(String memberUsername, String bookQuery, Date issueDate, Date dueDate) {
-        try (Connection conn = DBConnection.getConnection()) {
-            conn.setAutoCommit(false);
-
-            // 1. Resolve student user_id
-            int userId = -1;
-            String userSql = "SELECT user_id FROM Users WHERE username = ? AND role = 'STUDENT' AND is_active = TRUE";
-            try (PreparedStatement ps = conn.prepareStatement(userSql)) {
-                ps.setString(1, memberUsername);
-                ResultSet rs = ps.executeQuery();
-                if (rs.next()) userId = rs.getInt("user_id");
-            }
-            if (userId == -1) {
-                JOptionPane.showMessageDialog(issueBookCard, "Student not found: " + memberUsername,
-                        "Error", JOptionPane.ERROR_MESSAGE);
-                conn.rollback();
-                return;
-            }
-
-            int bookId = -1;
-            String bookSql = "SELECT book_id, available_copies FROM Books WHERE (LOWER(title) LIKE ? OR isbn = ?) AND is_active = TRUE";
-            try (PreparedStatement ps = conn.prepareStatement(bookSql)) {
-                ps.setString(1, "%" + bookQuery.toLowerCase() + "%");
-                ps.setString(2, bookQuery);
-                ResultSet rs = ps.executeQuery();
-                if (rs.next()) {
-                    int available = rs.getInt("available_copies");
-                    if (available <= 0) {
-                        JOptionPane.showMessageDialog(issueBookCard,
-                                "No copies available for: " + bookQuery,
-                                "Unavailable", JOptionPane.WARNING_MESSAGE);
-                        conn.rollback();
-                        return;
-                    }
-                    bookId = rs.getInt("book_id");
-                }
-            }
-            if (bookId == -1) {
-                JOptionPane.showMessageDialog(issueBookCard, "Book not found: " + bookQuery,
-                        "Error", JOptionPane.ERROR_MESSAGE);
-                conn.rollback();
-                return;
-            }
-
-            String dupSql = "SELECT 1 FROM Transactions WHERE user_id = ? AND book_id = ? AND status = 'ISSUED'";
-            try (PreparedStatement ps = conn.prepareStatement(dupSql)) {
-                ps.setInt(1, userId);
-                ps.setInt(2, bookId);
-                ResultSet rs = ps.executeQuery();
-                if (rs.next()) {
-                    JOptionPane.showMessageDialog(issueBookCard,
-                            "This student already has this book issued.",
-                            "Duplicate", JOptionPane.WARNING_MESSAGE);
-                    conn.rollback();
-                    return;
-                }
-            }
-
-            String tranSql = "INSERT INTO Transactions (user_id, book_id, issue_date, due_date, status) VALUES (?, ?, ?, ?, 'ISSUED')";
-            try (PreparedStatement ps = conn.prepareStatement(tranSql)) {
-                ps.setInt(1, userId);
-                ps.setInt(2, bookId);
-                ps.setDate(3, issueDate);
-                ps.setDate(4, dueDate);
-                ps.executeUpdate();
-            }
-
-            String updateBook = "UPDATE Books SET available_copies = available_copies - 1 WHERE book_id = ?";
-            try (PreparedStatement ps = conn.prepareStatement(updateBook)) {
-                ps.setInt(1, bookId);
-                ps.executeUpdate();
-            }
-
-            conn.commit();
-
-            JOptionPane.showMessageDialog(issueBookCard,
-                    "<html><font color='green'>Book issued successfully!</font></html>",
-                    "Success", JOptionPane.INFORMATION_MESSAGE);
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(issueBookCard, "Database error: " + e.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+    private void issueBook(String username, String bookQuery) {
+        try {
+            transactionService.issueBook(username, bookQuery);
+            JOptionPane.showMessageDialog(issueBookCard, "Book successfully issued", "Confirmation", JOptionPane.INFORMATION_MESSAGE);
+        } catch (RuntimeException e) {
+            JOptionPane.showMessageDialog(issueBookCard, e.getMessage(), "Validation", JOptionPane.WARNING_MESSAGE);
         }
     }
 

@@ -12,7 +12,7 @@ public class TransactionDAO {
  
     // ── Issue a book  ──────────────────────────
 public boolean issueBook(Transaction transaction) {
-    String sql = "INSERT INTO transactions "
+    String sql = "INSERT INTO Transactions "
                + "(user_id, book_id, issue_date, due_date, return_date, status) "
                + "VALUES (?, ?, ?, ?, ?, ?)";
     
@@ -42,16 +42,16 @@ public boolean issueBook(Transaction transaction) {
     // ── Return a book (UPDATE return date and status) ─────────────────────────
 public int returnBook(String bookTitleOrIsbn, String memberUsername) {
     String findSql = "SELECT t.transaction_id "
-                   + "FROM transactions t "
-                   + "JOIN books b ON t.book_id = b.book_id "
-                   + "JOIN users u ON t.user_id = u.user_id "
+                   + "FROM Transactions t "
+                   + "JOIN Books b ON t.book_id = b.book_id "
+                   + "JOIN Users u ON t.user_id = u.user_id "
                    + "WHERE (b.title = ? OR b.isbn = ?) "
                    + "AND u.username = ? "
                    + "AND t.status = 'ISSUED' "
                    + "ORDER BY t.issue_date DESC "
                    + "LIMIT 1";
 
-    String updateSql = "UPDATE transactions "
+    String updateSql = "UPDATE Transactions "
                      + "SET return_date = ?, status = 'RETURNED' "
                      + "WHERE transaction_id = ?";
 
@@ -92,7 +92,7 @@ public int returnBook(String bookTitleOrIsbn, String memberUsername) {
  
     // ── Find a single transaction by ID ──────────────────────────────────────
     public Transaction findTransactionById(int transactionId) {
-        String sql = "SELECT * FROM transactions WHERE transaction_id = ?";
+        String sql = "SELECT * FROM Transactions WHERE transaction_id = ?";
  
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -114,7 +114,7 @@ public int returnBook(String bookTitleOrIsbn, String memberUsername) {
     // ── All transactions for a specific user ─────────────────────────────────
     public List<Transaction> getTransactionsByUser(int userId) {
         List<Transaction> list = new ArrayList<>();
-        String sql = "SELECT * FROM transactions WHERE user_id = ?";
+        String sql = "SELECT * FROM Transactions WHERE user_id = ?";
  
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -136,7 +136,7 @@ public int returnBook(String bookTitleOrIsbn, String memberUsername) {
     // ── All transactions in the system ───────────────────────────────────────
     public List<Transaction> getAllTransactions() {
         List<Transaction> list = new ArrayList<>();
-        String sql = "SELECT * FROM transactions";
+        String sql = "SELECT * FROM Transactions";
  
         try (Connection conn = DBConnection.getConnection();
              Statement st = conn.createStatement();
@@ -155,7 +155,7 @@ public int returnBook(String bookTitleOrIsbn, String memberUsername) {
  
     // ── Check if a user has any overdue books (block check) ──────────────────
     public boolean hasOverdueBooks(int userId) {
-        String sql = "SELECT COUNT(*) FROM transactions "
+        String sql = "SELECT COUNT(*) FROM Transactions "
                    + "WHERE user_id = ? "
                    + "AND status = 'ISSUED' "
                    + "AND due_date < CURDATE()";
@@ -180,7 +180,7 @@ public int returnBook(String bookTitleOrIsbn, String memberUsername) {
     // ── Get all overdue transactions for a specific user ──────────────────────
     public List<Transaction> getOverdueTransactionsByUser(int userId) {
         List<Transaction> list = new ArrayList<>();
-        String sql = "SELECT * FROM transactions "
+        String sql = "SELECT * FROM Transactions "
                    + "WHERE user_id = ? "
                    + "AND status = 'ISSUED' "
                    + "AND due_date < CURDATE()";
@@ -204,7 +204,7 @@ public int returnBook(String bookTitleOrIsbn, String memberUsername) {
  
     // ── Check if a book has any unreturned (ISSUED) transactions ─────────────
     public boolean isBookCurrentlyIssued(int bookId) {
-        String sql = "SELECT COUNT(*) FROM transactions "
+        String sql = "SELECT COUNT(*) FROM Transactions "
                    + "WHERE book_id = ? "
                    + "AND status = 'ISSUED'";
  
