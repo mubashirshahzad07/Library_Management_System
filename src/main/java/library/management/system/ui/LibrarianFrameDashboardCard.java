@@ -263,7 +263,7 @@ public class LibrarianFrameDashboardCard {
         dashboardCard.add(scrollPane, gbc);
     }
 
-    private void getIssuedBooks() {
+    public void getIssuedBooks() {
         model.setRowCount(0);
         List<IssuedBookDTO> books = transactionService.getIssuedBooks();
 

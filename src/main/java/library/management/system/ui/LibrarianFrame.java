@@ -106,7 +106,16 @@ public class LibrarianFrame extends JFrame implements ActionListener {
         dashboardCard.setBackground(new Color(0x212020));
         String DASHBOARD = "DASHBOARD CARD";
         contentPanel.add(dashboardCard, DASHBOARD);
-        new LibrarianFrameDashboardCard(dashboardCard);
+        LibrarianFrameDashboardCard librarianFrameDashboardCard = new LibrarianFrameDashboardCard(dashboardCard);
+        dashboardCard.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentShown(ComponentEvent e) {
+                librarianFrameDashboardCard.getIssuedBooks();
+
+                dashboardCard.revalidate();
+                dashboardCard.repaint();
+            }
+        });
 
         // issue books card
         issueBookCard = new JPanel(new GridBagLayout());
@@ -127,14 +136,32 @@ public class LibrarianFrame extends JFrame implements ActionListener {
         catalogCard.setBackground(new Color(0x212020));
         String CATALOG = "CATALOG";
         contentPanel.add(catalogCard, CATALOG);
-        new LibrarianFrameCatalogCard(catalogCard);
+        LibrarianFrameCatalogCard librarianFrameCatalogCard = new LibrarianFrameCatalogCard(catalogCard);
+        catalogCard.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentShown(ComponentEvent e) {
+                librarianFrameCatalogCard.getAllBooks();
+
+                catalogCard.revalidate();
+                catalogCard.repaint();
+            }
+        });
 
         // members card
         membersCard = new JPanel(new GridBagLayout());
         membersCard.setBackground(new Color(0x212020));
         String MEMBERS = "MEMBERS";
         contentPanel.add(membersCard, MEMBERS);
-        new LibrarianFrameMemberCard(membersCard);
+        LibrarianFrameMemberCard librarianFrameMemberCard = new LibrarianFrameMemberCard(membersCard);
+        membersCard.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentShown(ComponentEvent e) {
+                librarianFrameMemberCard.getAllMembers();
+
+                membersCard.revalidate();
+                membersCard.repaint();
+            }
+        });
 
         dashBoard.addActionListener(actionEvent -> cardLayout.show(contentPanel, DASHBOARD));
         issueBook.addActionListener(actionEvent -> cardLayout.show(contentPanel, ISSUE_BOOK));

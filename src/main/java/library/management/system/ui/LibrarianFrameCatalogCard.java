@@ -155,7 +155,7 @@ public class LibrarianFrameCatalogCard implements ActionListener {
         });
     }
 
-    private void getAllBooks() {
+    public void getAllBooks() {
         model.setRowCount(0);
         List<BookCatalogDTO> books = bookService.getBookCatalog();
 
