@@ -43,4 +43,14 @@ public class FineService {
     public List<FineReportDTO> searchFineReport(String keyword) {
         return fineDAO.searchFineReports(keyword);
     }
+    
+    // fine calculation for student dashboard panel
+    public double getTotalFinesByUsername(String username) {
+        return fineDAO.getTotalFinesByUsername(username);
+    }
+    
+    // total fine for admin panel
+    public double getTotalSystemFines() {
+        return fineDAO.getTotalSystemFines();
+    }
 }

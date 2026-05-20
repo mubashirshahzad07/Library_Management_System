@@ -62,4 +62,9 @@ public class UserService {
     public List<MemberTableDTO> searchMemberTable(String keyword) {
         return userDAO.searchMembers(keyword);
     }
+    
+    // admin total users panel
+    public int getActiveUsersCount() {
+        return userDAO.getActiveUsersCount();
+    }
 }

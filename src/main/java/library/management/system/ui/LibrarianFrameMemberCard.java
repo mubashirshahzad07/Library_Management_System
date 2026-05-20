@@ -153,7 +153,7 @@ public class LibrarianFrameMemberCard implements ActionListener {
         });
     }
 
-    private void getAllMembers() {
+    public void getAllMembers() {
         model.setRowCount(0);
 
         List<MemberTableDTO> users = userService.getMemberTableDTO();

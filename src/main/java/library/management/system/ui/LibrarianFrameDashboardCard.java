@@ -15,7 +15,6 @@ import java.sql.*;
 import java.util.List;
 
 /**
- * @since 04 May 2026
  * Handles the dashboard of Librarian
  */
 public class LibrarianFrameDashboardCard {
@@ -23,6 +22,7 @@ public class LibrarianFrameDashboardCard {
     private DefaultTableModel model;
     private JScrollPane scrollPane;
     private final TransactionService transactionService = new TransactionService();
+    JTable currentlyIssuedBooksTable;
 
     public LibrarianFrameDashboardCard(JPanel dashboardCard) {
         this.dashboardCard = dashboardCard;
@@ -209,9 +209,7 @@ public class LibrarianFrameDashboardCard {
         model.addColumn("Due date");
         model.addColumn("Status");
 
-        getIssuedBooks();
-
-        JTable currentlyIssuedBooksTable = new JTable(model);
+        currentlyIssuedBooksTable = new JTable(model);
         JTableHeader header = currentlyIssuedBooksTable.getTableHeader();
         header.setForeground(Color.WHITE);
         header.setBackground(new Color(0x043029));
@@ -220,6 +218,8 @@ public class LibrarianFrameDashboardCard {
         currentlyIssuedBooksTable.setShowGrid(false);
         currentlyIssuedBooksTable.setFont(new Font("FiraMono NerdFonts", Font.PLAIN, 14));
         currentlyIssuedBooksTable.setRowHeight(25);
+
+        getIssuedBooks();
 
         int statusColumn = 3;
         currentlyIssuedBooksTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
@@ -263,7 +263,7 @@ public class LibrarianFrameDashboardCard {
         dashboardCard.add(scrollPane, gbc);
     }
 
-    private void getIssuedBooks() {
+    public void getIssuedBooks() {
         model.setRowCount(0);
         List<IssuedBookDTO> books = transactionService.getIssuedBooks();
 
@@ -275,6 +275,13 @@ public class LibrarianFrameDashboardCard {
             scrollPane.getViewport().setBackground(new Color(0x212020));
             scrollPane.setBorder(BorderFactory.createEmptyBorder());
         }
+
+        int rowHeight = currentlyIssuedBooksTable.getRowHeight();
+        int noOfRows = Math.max(currentlyIssuedBooksTable.getRowCount(), 1);
+        currentlyIssuedBooksTable.setPreferredScrollableViewportSize(new Dimension(
+                currentlyIssuedBooksTable.getPreferredSize().width,
+                rowHeight * noOfRows
+        ));
     }
 
     private void addVerticalFiller() {

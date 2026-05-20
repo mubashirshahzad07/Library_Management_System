@@ -154,4 +154,9 @@ public List<BookTableDTO> searchBooks(String keyword) {
         // if searched by title, author or category
         return bookDAO.searchStudentBookCatalog(keyword);
     }
+    
+    // admin total books panel
+    public int getTotalActiveBooksCount() {
+        return bookDAO.getTotalActiveBooksCount();
+    }
 }

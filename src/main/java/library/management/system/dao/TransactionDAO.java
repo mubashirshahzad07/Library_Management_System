@@ -486,4 +486,133 @@ public int returnBook(String bookTitleOrIsbn, String memberUsername) {
 
         return history;
     }
+    
+    // librarian dashboard panels 
+    public int getOverdueBooksTodayCount() {
+        String sql = """
+            SELECT COUNT(*)
+            FROM Transactions
+            WHERE status = 'ISSUED'
+            AND due_date = CURDATE()
+        """;
+
+        return getCount(sql);
+    }
+    
+    public int getBooksIssuedTodayCount() {
+        String sql = """
+            SELECT COUNT(*)
+            FROM Transactions
+            WHERE issue_date = CURDATE()
+        """;
+
+        return getCount(sql);
+    }
+    
+    public int getReturnsTodayCount() {
+        String sql = """
+            SELECT COUNT(*)
+            FROM Transactions
+            WHERE status = 'RETURNED'
+            AND return_date = CURDATE()
+        """;
+
+        return getCount(sql);
+    }
+    
+    public int getTotalOverdueBooksCount() {
+        String sql = """
+            SELECT COUNT(*)
+            FROM Transactions
+            WHERE status = 'ISSUED'
+            AND due_date < CURDATE()
+        """;
+
+        return getCount(sql);
+    }
+    
+    // admin panel to show active loans
+    public int getActiveLoansCount() {
+        String sql = """
+            SELECT COUNT(*)
+            FROM Transactions
+            WHERE status = 'ISSUED'
+        """;
+
+        return getCount(sql);
+    }
+   
+    // helper method for panels
+    private int getCount(String sql) {
+        try (
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery()
+        ) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to load count");
+        }
+
+        return 0;
+    }
+    
+    // student dashboard panels
+    public int getCurrentlyBorrowedBooksCount(int userId) {
+        String sql = """
+            SELECT COUNT(*)
+            FROM Transactions
+            WHERE user_id = ?
+            AND status = 'ISSUED'
+        """;
+
+        return getCountByUserId(sql, userId);
+    }
+
+    public int getTotalIssuedBooksCount(int userId) {
+        String sql = """
+            SELECT COUNT(*)
+            FROM Transactions
+            WHERE user_id = ?
+        """;
+
+        return getCountByUserId(sql, userId);
+    }
+
+    public int getTotalReturnedBooksCount(int userId) {
+        String sql = """
+            SELECT COUNT(*)
+            FROM Transactions
+            WHERE user_id = ?
+            AND status = 'RETURNED'
+        """;
+
+        return getCountByUserId(sql, userId);
+    }
+    
+    private int getCountByUserId(String sql, int userId) {
+        try (
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+            stmt.setInt(1, userId);
+
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to load count");
+        }
+
+        return 0;
+    }
+    
 }

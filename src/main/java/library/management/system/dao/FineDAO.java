@@ -140,4 +140,57 @@ public class FineDAO {
 
         return fines;
     }
+    
+    // total fines calculation for student dashboard panel
+    public double getTotalFinesByUsername(String username) {
+
+        String sql = """
+            SELECT COALESCE(SUM(fine_amount), 0)
+            FROM fines_report
+            WHERE student_username = ?
+        """;
+
+        try (
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+            stmt.setString(1, username);
+
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getDouble(1);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to load total fines");
+        }
+
+        return 0;
+    }
+    
+    // total fines for admin panel
+    public double getTotalSystemFines() {
+        String sql = """
+            SELECT COALESCE(SUM(fine_amount), 0)
+            FROM fines_report
+        """;
+
+        try (
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery()
+        ) {
+            if (rs.next()) {
+                return rs.getDouble(1);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to load total system fines");
+        }
+
+        return 0;
+    }
 }

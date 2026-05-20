@@ -150,7 +150,7 @@ public class LibrarianFrameReturnBookCard {
 
     private void returnBook(String username, String bookQuery) {
         try {
-            transactionService.returnBook(username, bookQuery);
+            transactionService.returnBook(bookQuery, username);
         } catch (RuntimeException e) {
             JOptionPane.showMessageDialog(returnBookCard, e.getMessage(), "Validation", JOptionPane.WARNING_MESSAGE);
         }
