@@ -71,7 +71,7 @@ public class TransactionService {
         // DAO inserts the row — DB generates and stores the transaction_id
         boolean saved = transactionDAO.issueBook(transaction);
         if (!saved) {
-            throw new RuntimeException("Failed to issue book. Please try again.");
+            throw new RuntimeException("Student already has a copy of this book.");
         }
  
         // Reduce available_copies by 1
