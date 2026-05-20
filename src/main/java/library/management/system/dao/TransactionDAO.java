@@ -12,31 +12,48 @@ public class TransactionDAO {
  
     // ── Issue a book  ──────────────────────────
 public boolean issueBook(Transaction transaction) {
-    String sql = "INSERT INTO Transactions "
-               + "(user_id, book_id, issue_date, due_date, return_date, status) "
-               + "VALUES (?, ?, ?, ?, ?, ?)";
-    
+
+    String checkSql = "SELECT COUNT(*) FROM Transactions "
+                    + "WHERE user_id = ? "
+                    + "AND book_id = ? "
+                    + "AND status = 'ISSUED'";
+
+    String insertSql = "INSERT INTO Transactions "
+                     + "(user_id, book_id, issue_date, due_date, return_date, status) "
+                     + "VALUES (?, ?, ?, ?, ?, ?)";
+
     try (Connection conn = DBConnection.getConnection();
-         PreparedStatement ps = conn.prepareStatement(sql)) {
-        
-        ps.setInt(1, transaction.getUserId());
-        ps.setInt(2, transaction.getBookId());
-        ps.setDate(3, new java.sql.Date(transaction.getIssueDate().getTime()));
-        ps.setDate(4, new java.sql.Date(transaction.getDueDate().getTime()));
-        
-        if (transaction.getReturnDate() != null) {
-            ps.setDate(5, new java.sql.Date(transaction.getReturnDate().getTime()));
-        } else {
-            ps.setNull(5, Types.DATE);
+         PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
+
+        checkPs.setInt(1, transaction.getUserId());
+        checkPs.setInt(2, transaction.getBookId());
+
+        ResultSet rs = checkPs.executeQuery();
+
+        if (rs.next() && rs.getInt(1) > 0) {
+            return false; // active loan already exists, block the issue
         }
-        
-        ps.setString(6, transaction.getStatus());
-        
-        return ps.executeUpdate() > 0;
-        
+
+        try (PreparedStatement insertPs = conn.prepareStatement(insertSql)) {
+
+            insertPs.setInt(1, transaction.getUserId());
+            insertPs.setInt(2, transaction.getBookId());
+            insertPs.setDate(3, new java.sql.Date(transaction.getIssueDate().getTime()));
+            insertPs.setDate(4, new java.sql.Date(transaction.getDueDate().getTime()));
+
+            if (transaction.getReturnDate() != null) {
+                insertPs.setDate(5, new java.sql.Date(transaction.getReturnDate().getTime()));
+            } else {
+                insertPs.setNull(5, Types.DATE);
+            }
+
+            insertPs.setString(6, transaction.getStatus());
+
+            return insertPs.executeUpdate() > 0;
+        }
+
     } catch (SQLException e) {
-        e.printStackTrace();
-        return false;
+        throw new RuntimeException("Operation failed", e);
     }
 }
     // ── Return a book (UPDATE return date and status) ─────────────────────────
