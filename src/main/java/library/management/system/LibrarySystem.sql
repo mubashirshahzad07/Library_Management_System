@@ -106,7 +106,7 @@ SELECT
     t.transaction_id,
     u.username AS student_username,
     b.title AS book_title,
-    t.isue_date,
+    t.issue_date,
     t.due_date,
     NULL AS return_date,
     DATEDIFF(CURDATE(), t.due_date) * 1.00 AS fine_amount,
