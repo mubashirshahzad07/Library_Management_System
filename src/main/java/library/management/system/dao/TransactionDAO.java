@@ -594,6 +594,18 @@ public int returnBook(String bookTitleOrIsbn, String memberUsername) {
         return getCountByUserId(sql, userId);
     }
     
+    public int getTotalOverdueBooksCount(int userId) {
+        String sql = """
+            SELECT COUNT(*)
+            FROM Transactions
+            WHERE user_id = ?
+            AND status = 'ISSUED'
+            AND due_date < CURDATE()
+        """;
+
+        return getCount(sql);
+    }
+    
     private int getCountByUserId(String sql, int userId) {
         try (
             Connection conn = DBConnection.getConnection();
@@ -613,6 +625,5 @@ public int returnBook(String bookTitleOrIsbn, String memberUsername) {
         }
 
         return 0;
-    }
-    
+    }   
 }

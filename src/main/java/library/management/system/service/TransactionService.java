@@ -175,6 +175,10 @@ public class TransactionService {
         return transactionDAO.getTotalReturnedBooksCount(userId);
     }
     
+    public int getTotalOverdueBooksCount(int userId) {
+        return transactionDAO.getTotalOverdueBooksCount(userId);
+    }
+    
     // admin active loans panel
     public int getActiveLoansCount() {
         return transactionDAO.getActiveLoansCount();
