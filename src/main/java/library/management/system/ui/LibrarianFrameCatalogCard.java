@@ -95,6 +95,7 @@ public class LibrarianFrameCatalogCard implements ActionListener {
             }
         };
 
+//        model.addColumn("ISBN");
         model.addColumn("Book title");
         model.addColumn("Author");
         model.addColumn("Total Copies");

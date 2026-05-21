@@ -8,7 +8,6 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
-import java.sql.*;
 
 import java.util.List;
 
@@ -20,12 +19,17 @@ public class LibrarianFrameDashboardCard {
     private DefaultTableModel model;
     private JScrollPane scrollPane;
     private final TransactionService transactionService = new TransactionService();
-    JTable currentlyIssuedBooksTable;
+    private JTable currentlyIssuedBooksTable;
+    private JLabel booksReturnInformation;
+    private JPanel booksIssuedToday;
+    private JPanel booksReturnedToday;
+    private JLabel noOfBooksBorrowedLabel = new JLabel("0");
+    private JLabel noOfBooksReturnedLabel = new JLabel("0");
 
     public LibrarianFrameDashboardCard(JPanel dashboardCard) {
         this.dashboardCard = dashboardCard;
         this.addCardHeader();
-        this.addBooksReturnInformation();
+        this.addOverdueBooksInformation();
         this.addBooksIssuedToday();
         this.addReturnsToday();
         this.addOverdue();
@@ -55,21 +59,26 @@ public class LibrarianFrameDashboardCard {
         dashboardCard.add(libraryIcon, gridBagConstraints);
     }
 
-    private void addBooksReturnInformation() {
-        JLabel booksReturnInformation = new JLabel();
-        booksReturnInformation.setOpaque(true);
-        booksReturnInformation.setBorder(BorderFactory.createEmptyBorder(15, 30, 15, 10));
-        booksReturnInformation.setFont(new Font("FiraMono NerdFont", Font.PLAIN, 15));
-
+    public void updateOverdueBooksInformation() {
         int overdueCount = transactionService.getOverdueBooksTodayCount();
+
         if (overdueCount > 0) {
             booksReturnInformation.setForeground(Color.WHITE);
             booksReturnInformation.setBackground(new Color(0xF59E0B));
-            booksReturnInformation.setText(overdueCount + " book(s) are overdue — follow up with members.");
+            booksReturnInformation.setText(overdueCount + " book(s) overdue — follow up with members.");
         } else {
             booksReturnInformation.setBackground(new Color(0xF0E526));
             booksReturnInformation.setText("No overdue books today.");
         }
+    }
+
+    private void addOverdueBooksInformation() {
+        booksReturnInformation = new JLabel();
+        booksReturnInformation.setOpaque(true);
+        booksReturnInformation.setBorder(BorderFactory.createEmptyBorder(15, 30, 15, 10));
+        booksReturnInformation.setFont(new Font("FiraMono NerdFont", Font.PLAIN, 15));
+
+        updateOverdueBooksInformation();
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
@@ -83,8 +92,21 @@ public class LibrarianFrameDashboardCard {
         dashboardCard.add(booksReturnInformation, gbc);
     }
 
-    public void addBooksIssuedToday() {
-        JPanel booksIssuedToday = new JPanel();
+    public void updateBooksIssuedToday() {
+        int noOfBooksIssued = transactionService.getBooksIssuedTodayCount();
+        noOfBooksBorrowedLabel.setText(String.valueOf(noOfBooksIssued));
+        noOfBooksBorrowedLabel.setFont(new Font("FiraMono NerdFont", Font.BOLD, 25));
+        noOfBooksBorrowedLabel.setForeground(Color.WHITE);
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.anchor = GridBagConstraints.WEST;
+        booksIssuedToday.add(noOfBooksBorrowedLabel, gbc);
+    }
+
+    private void addBooksIssuedToday() {
+        booksIssuedToday = new JPanel();
         booksIssuedToday.setLayout(new GridBagLayout());
         booksIssuedToday.setBorder(BorderFactory.createEmptyBorder(10, 5, 10, 20));
         booksIssuedToday.setBackground(new Color(0x67ABD6));
@@ -98,14 +120,7 @@ public class LibrarianFrameDashboardCard {
         gbc.gridy = 0;
         booksIssuedToday.add(booksIssuedTodayLabel, gbc);
 
-        int noOfBooksIssued = transactionService.getBooksIssuedTodayCount();
-        JLabel noOfBooksBorrowedLabel = new JLabel(String.valueOf(noOfBooksIssued));
-        noOfBooksBorrowedLabel.setFont(new Font("FiraMono NerdFont", Font.BOLD, 25));
-        noOfBooksBorrowedLabel.setForeground(Color.WHITE);
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        gbc.anchor = GridBagConstraints.WEST;
-        booksIssuedToday.add(noOfBooksBorrowedLabel, gbc);
+        updateBooksIssuedToday();
 
         gbc.gridx = 0;
         gbc.gridy = 2;
@@ -115,8 +130,21 @@ public class LibrarianFrameDashboardCard {
         dashboardCard.add(booksIssuedToday, gbc);
     }
 
+    public void updateBooksReturnedToday() {
+        int noOfBooksReturned = transactionService.getReturnsTodayCount();
+        noOfBooksReturnedLabel.setText(Integer.valueOf(noOfBooksReturned).toString());
+        noOfBooksReturnedLabel.setFont(new Font("FiraMono NerdFont", Font.BOLD, 25));
+        noOfBooksReturnedLabel.setForeground(Color.WHITE);
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.anchor = GridBagConstraints.WEST;
+        booksReturnedToday.add(noOfBooksReturnedLabel, gbc);
+    }
+
     private void addReturnsToday() {
-        JPanel booksReturnedToday = new JPanel();
+        booksReturnedToday = new JPanel();
         booksReturnedToday.setBorder(BorderFactory.createEmptyBorder(10, 5, 10, 20));
         booksReturnedToday.setLayout(new GridBagLayout());
         booksReturnedToday.setBackground(new Color(0x29CF45));
@@ -130,14 +158,7 @@ public class LibrarianFrameDashboardCard {
         gbc.gridy = 0;
         booksReturnedToday.add(booksReturnedLabel, gbc);
 
-        int noOfBooksReturned = transactionService.getReturnsTodayCount();
-        JLabel noOfBooksReturnedLabel = new JLabel(String.valueOf(noOfBooksReturned));
-        noOfBooksReturnedLabel.setFont(new Font("FiraMono NerdFont", Font.BOLD, 25));
-        noOfBooksReturnedLabel.setForeground(Color.WHITE);
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        gbc.anchor = GridBagConstraints.WEST;
-        booksReturnedToday.add(noOfBooksReturnedLabel, gbc);
+        updateBooksReturnedToday();
 
         gbc.gridx = 1;
         gbc.gridy = 2;

@@ -156,7 +156,6 @@ public class StudentFrameSearchBooksCard implements ActionListener {
             scrollPane.setBorder(BorderFactory.createEmptyBorder());
         }
 
-        System.out.println("search table row count = " + searchBooksTable.getRowCount()); // debugging
         int rowHeight = searchBooksTable.getRowHeight();
         int noOfRows = Math.max(searchBooksTable.getRowCount(), 1);
         searchBooksTable.setPreferredScrollableViewportSize(new Dimension(
