@@ -95,7 +95,7 @@ public class LibrarianFrameCatalogCard implements ActionListener {
             }
         };
 
-//        model.addColumn("ISBN");
+        model.addColumn("ISBN");
         model.addColumn("Book title");
         model.addColumn("Author");
         model.addColumn("Total Copies");
@@ -130,7 +130,7 @@ public class LibrarianFrameCatalogCard implements ActionListener {
         catalogTable.setFont(new Font("FiraMono NerdFonts", Font.PLAIN, 14));
         catalogTable.setRowHeight(35);
 
-        int statusColumn = 4;
+        int statusColumn = 5;
         catalogTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
@@ -159,7 +159,7 @@ public class LibrarianFrameCatalogCard implements ActionListener {
         List<BookCatalogDTO> books = bookService.getBookCatalog();
 
         for (BookCatalogDTO book : books) {
-            model.addRow(new Object[] {book.getTitle(), book.getAuthor(), book.getTotalCopies(), book.getAvailableCopies(), book.getStatus()});
+            model.addRow(new Object[] {book.getIsbn(), book.getTitle(), book.getAuthor(), book.getTotalCopies(), book.getAvailableCopies(), book.getStatus()});
         }
 
         if (scrollPane != null) {
@@ -173,7 +173,7 @@ public class LibrarianFrameCatalogCard implements ActionListener {
         List<BookCatalogDTO> books = bookService.searchBookCatalog(keyword);
 
         for (BookCatalogDTO book : books) {
-            model.addRow(new Object[] {book.getTitle(), book.getAuthor(), book.getTotalCopies(), book.getAvailableCopies(), book.getStatus()});
+            model.addRow(new Object[] {book.getIsbn(), book.getTitle(), book.getAuthor(), book.getTotalCopies(), book.getAvailableCopies(), book.getStatus()});
         }
 
         if (model.getRowCount() == 0) {
