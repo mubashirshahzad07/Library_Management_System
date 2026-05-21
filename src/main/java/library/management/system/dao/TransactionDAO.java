@@ -603,7 +603,7 @@ public int returnBook(String bookTitleOrIsbn, String memberUsername) {
             AND due_date < CURDATE()
         """;
 
-        return getCount(sql);
+        return getCountByUserId(sql, userId);
     }
     
     private int getCountByUserId(String sql, int userId) {
