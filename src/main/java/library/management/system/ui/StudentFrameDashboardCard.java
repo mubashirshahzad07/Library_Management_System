@@ -2,7 +2,6 @@ package library.management.system.ui;
 
 import library.management.system.dto.StudentBorrowedBookDTO;
 import library.management.system.model.User;
-import library.management.system.util.DBConnection;
 import library.management.system.service.TransactionService;
 import library.management.system.service.FineService;
 
@@ -227,6 +226,8 @@ public class StudentFrameDashboardCard {
         dashboardTable.setFont(new Font("FiraMono NerdFonts", Font.PLAIN, 14));
         dashboardTable.setRowHeight(25);
 
+        int statusColumn = 3;
+
         dashboardTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
@@ -237,6 +238,15 @@ public class StudentFrameDashboardCard {
                 label.setBackground(new Color(0x388A7C));
                 label.setOpaque(true);
                 label.setForeground(Color.WHITE);
+
+                if (column == statusColumn) {
+                    String status = table.getValueAt(row, column) != null
+                            ? table.getValueAt(row, column).toString() : "";
+                    label.setBackground(status.equals("Overdue")
+                            ? new Color(0xB82323) : new Color(0x309912));
+                    label.setFont(new Font("FiraMono NerdFont", Font.BOLD, 16));
+                }
+
                 return label;
             }
         });
@@ -281,30 +291,5 @@ public class StudentFrameDashboardCard {
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.VERTICAL;
         dashboardCard.add(Box.createVerticalGlue(), gbc);
-    }
-
-    private int fetchCount(String sql) {
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, user.getUserId());
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) return rs.getInt(1);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return 0;
-    }
-
-    private double fetchFineAmount() {
-        String sql = "SELECT COALESCE(SUM(fine_amount), 0) FROM Fines WHERE user_id = ? AND payment_status = 'UNPAID'";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, user.getUserId());
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) return rs.getDouble(1);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return 0;
     }
 }

@@ -1,8 +1,6 @@
 package library.management.system.ui;
 
 import library.management.system.dto.BookCatalogDTO;
-import library.management.system.dto.BookTableDTO;
-import library.management.system.model.Book;
 import library.management.system.service.BookService;
 
 import javax.swing.*;

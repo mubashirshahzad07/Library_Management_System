@@ -83,7 +83,7 @@ public class LibrarianFrameDashboardCard {
         dashboardCard.add(booksReturnInformation, gbc);
     }
 
-    private void addBooksIssuedToday() {
+    public void addBooksIssuedToday() {
         JPanel booksIssuedToday = new JPanel();
         booksIssuedToday.setLayout(new GridBagLayout());
         booksIssuedToday.setBorder(BorderFactory.createEmptyBorder(10, 5, 10, 20));
@@ -238,6 +238,7 @@ public class LibrarianFrameDashboardCard {
                             ? new Color(0xB82323) : new Color(0x309912));
                     label.setFont(new Font("FiraMono NerdFont", Font.BOLD, 16));
                 }
+
                 return label;
             }
         });

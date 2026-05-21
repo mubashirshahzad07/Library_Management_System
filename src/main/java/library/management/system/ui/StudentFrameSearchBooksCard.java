@@ -3,13 +3,12 @@ package library.management.system.ui;
 import library.management.system.dto.BookTableDTO;
 import library.management.system.model.User;
 import library.management.system.service.BookService;
-import library.management.system.util.DBConnection;
+import library.management.system.model.Book;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
-import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -97,17 +96,14 @@ public class StudentFrameSearchBooksCard implements ActionListener {
         model = new DefaultTableModel() {
             @Override
             public boolean isCellEditable(int row, int column) {
-                // Only the Borrow column is "editable" (used to trigger the button action)
-                return column == 3 && !getValueAt(row, column).toString().equals("Borrowed");
+                return false;
             }
         };
 
         model.addColumn("Book title");
         model.addColumn("Author");
-        model.addColumn("Available");
         model.addColumn("Book category");
-
-        int buttonColumnIndex = 3;
+        model.addColumn("Available copies");
 
         searchBooksTable = new JTable(model);
 
@@ -120,13 +116,12 @@ public class StudentFrameSearchBooksCard implements ActionListener {
         searchBooksTable.setFont(new Font("FiraMono NerdFonts", Font.PLAIN, 14));
         searchBooksTable.setRowHeight(35);
 
+        getAllBooks();
+
         searchBooksTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
                                                            boolean isSelected, boolean hasFocus, int row, int column) {
-                if (column == buttonColumnIndex) {
-                    return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                }
                 JLabel label = (JLabel) super.getTableCellRendererComponent(
                         table, value, isSelected, hasFocus, row, column);
                 label.setHorizontalAlignment(JLabel.CENTER);
@@ -137,78 +132,7 @@ public class StudentFrameSearchBooksCard implements ActionListener {
             }
         });
 
-        searchBooksTable.getColumnModel().getColumn(buttonColumnIndex).setCellRenderer(
-                new TableCellRenderer() {
-                    private final JButton button = new JButton();
-                    {
-                        button.setOpaque(true);
-                        button.setFont(new Font("FiraMono NerdFont", Font.BOLD, 14));
-                        button.setForeground(Color.WHITE);
-                        button.setFocusPainted(false);
-                        button.setBorderPainted(false);
-                    }
-
-                    @Override
-                    public Component getTableCellRendererComponent(JTable table, Object value,
-                                                                   boolean isSelected, boolean hasFocus, int row, int column) {
-                        String text = value != null ? value.toString() : "Borrow";
-                        button.setText(text);
-                        button.setEnabled(!text.equals("Borrowed"));
-                        button.setBackground(text.equals("Borrowed")
-                                ? Color.DARK_GRAY : new Color(0x852832));
-                        return button;
-                    }
-                }
-        );
-
-        searchBooksTable.getColumnModel().getColumn(buttonColumnIndex).setCellEditor(
-                new DefaultCellEditor(new JCheckBox()) {
-                    private final JButton button = new JButton("Borrow");
-                    private int currentRow;
-
-                    {
-                        button.setOpaque(true);
-                        button.setForeground(Color.WHITE);
-                        button.setBackground(new Color(0x2E2D2D));
-                        button.setFont(new Font("FiraMono NerdFont", Font.BOLD, 14));
-                        button.setFocusPainted(false);
-                        button.setBorderPainted(false);
-
-                        button.addActionListener(e -> {
-                            fireEditingStopped();
-                            String bookTitle = searchBooksTable.getValueAt(currentRow, 0).toString();
-                            String author    = searchBooksTable.getValueAt(currentRow, 1).toString();
-                            String available = searchBooksTable.getValueAt(currentRow, 2).toString();
-
-                            if (available.equals("No")) {
-                                JOptionPane.showMessageDialog(searchBooksCard,
-                                        "No copies of \"" + bookTitle + "\" are available right now.",
-                                        "Unavailable", JOptionPane.WARNING_MESSAGE);
-                                return;
-                            }
-
-                            borrowBook(bookTitle, author, currentRow);
-                        });
-                    }
-
-                    @Override
-                    public Component getTableCellEditorComponent(JTable table, Object value,
-                                                                 boolean isSelected, int row, int column) {
-                        currentRow = row;
-                        button.setText("Borrow");
-                        return button;
-                    }
-
-                    @Override
-                    public Object getCellEditorValue() {
-                        return "Borrowed";
-                    }
-                }
-        );
-
         scrollPane = new JScrollPane(searchBooksTable);
-        scrollPane.getViewport().setBackground(new Color(0x212020));
-        scrollPane.setBorder(BorderFactory.createEmptyBorder());
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
@@ -219,90 +143,54 @@ public class StudentFrameSearchBooksCard implements ActionListener {
         searchBooksCard.add(scrollPane, gbc);
     }
 
-    /**
-     * Issues the book to the logged-in student: inserts a Transaction (14-day loan)
-     * and decrements available_copies. Updates the table row to "Borrowed" on success.
-     */
-    private void borrowBook(String bookTitle, String author, int tableRow) {
-        try (Connection conn = DBConnection.getConnection()) {
-            conn.setAutoCommit(false);
+    public void getAllBooks() {
+        model.setRowCount(0);
+        List<Book> books = bookService.getAllBooks();
 
-            // 1. Find book_id and confirm availability
-            int bookId = -1;
-            String bookSql = "SELECT book_id, available_copies FROM Books " +
-                    "WHERE LOWER(title) = LOWER(?) AND LOWER(author) = LOWER(?) AND is_active = TRUE";
-            try (PreparedStatement ps = conn.prepareStatement(bookSql)) {
-                ps.setString(1, bookTitle);
-                ps.setString(2, author);
-                ResultSet rs = ps.executeQuery();
-                if (rs.next()) {
-                    int available = rs.getInt("available_copies");
-                    if (available <= 0) {
-                        JOptionPane.showMessageDialog(searchBooksCard,
-                                "No copies of \"" + bookTitle + "\" are currently available.",
-                                "Unavailable", JOptionPane.WARNING_MESSAGE);
-                        conn.rollback();
-                        return;
-                    }
-                    bookId = rs.getInt("book_id");
-                }
-            }
-            if (bookId == -1) {
-                JOptionPane.showMessageDialog(searchBooksCard,
-                        "Book not found in the database.", "Error", JOptionPane.ERROR_MESSAGE);
-                conn.rollback();
-                return;
+        for (Book book : books) {
+            model.addRow(new Object[] {book.getTitle(), book.getAuthor(), book.getCategory(), book.getAvailableCopies()});
+        }
+
+        if (scrollPane != null) {
+            scrollPane.getViewport().setBackground(new Color(0x212020));
+            scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        }
+
+        System.out.println("search table row count = " + searchBooksTable.getRowCount()); // debugging
+        int rowHeight = searchBooksTable.getRowHeight();
+        int noOfRows = Math.max(searchBooksTable.getRowCount(), 1);
+        searchBooksTable.setPreferredScrollableViewportSize(new Dimension(
+                searchBooksTable.getPreferredSize().width,
+                rowHeight * noOfRows
+        ));
+    }
+
+    private void getSearchedBooks(String keyword) {
+        model.setRowCount(0);
+        List<BookTableDTO> books;
+        try {
+            books = bookService.searchBooks(keyword);
+
+            for (BookTableDTO book : books) {
+                model.addRow(new Object[] {book.getTitle(), book.getAuthor(), book.getCategory(), book.getAvailableDisplay()});
             }
 
-            // 2. Check student doesn't already have this book
-            String dupSql = "SELECT 1 FROM Transactions WHERE user_id = ? AND book_id = ? AND status = 'ISSUED'";
-            try (PreparedStatement ps = conn.prepareStatement(dupSql)) {
-                ps.setInt(1, userId);
-                ps.setInt(2, bookId);
-                ResultSet rs = ps.executeQuery();
-                if (rs.next()) {
-                    JOptionPane.showMessageDialog(searchBooksCard,
-                            "You already have \"" + bookTitle + "\" issued.",
-                            "Duplicate", JOptionPane.WARNING_MESSAGE);
-                    conn.rollback();
-                    return;
-                }
+            if (model.getRowCount() == 0) {
+                JOptionPane.showMessageDialog(searchBooksCard, "No books found for \"" + keyword + "\"",
+                        "Search", JOptionPane.INFORMATION_MESSAGE);
             }
 
-            // 3. Insert transaction (14-day loan starting today)
-            Date today   = Date.valueOf(java.time.LocalDate.now());
-            Date dueDate = Date.valueOf(java.time.LocalDate.now().plusDays(14));
-            try (PreparedStatement ps = conn.prepareStatement(
-                    "INSERT INTO Transactions (user_id, book_id, issue_date, due_date, status) VALUES (?, ?, ?, ?, 'ISSUED')")) {
-                ps.setInt(1, userId);
-                ps.setInt(2, bookId);
-                ps.setDate(3, today);
-                ps.setDate(4, dueDate);
-                ps.executeUpdate();
+            if (scrollPane != null) {
+                scrollPane.getViewport().setBackground(new Color(0x212020));
+                scrollPane.setBorder(BorderFactory.createEmptyBorder());
+            }
+        } catch (RuntimeException e) {
+            if (scrollPane != null) {
+                scrollPane.getViewport().setBackground(new Color(0x212020));
+                scrollPane.setBorder(BorderFactory.createEmptyBorder());
             }
 
-            // 4. Decrement available_copies
-            try (PreparedStatement ps = conn.prepareStatement(
-                    "UPDATE Books SET available_copies = available_copies - 1 WHERE book_id = ?")) {
-                ps.setInt(1, bookId);
-                ps.executeUpdate();
-            }
-
-            conn.commit();
-
-            // Update table row to reflect borrowed status
-            model.setValueAt("Borrowed", tableRow, 3);
-            model.setValueAt("No", tableRow, 2);
-
-            JOptionPane.showMessageDialog(searchBooksCard,
-                    "<html><font color='green'>\"" + bookTitle + "\" has been issued to you.</font><br>" +
-                            "Due date: " + dueDate + "</html>",
-                    "Issued", JOptionPane.INFORMATION_MESSAGE);
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(searchBooksCard, "Database error: " + e.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(searchBooksCard, e.getMessage(), "Validation", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
@@ -319,44 +207,9 @@ public class StudentFrameSearchBooksCard implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == searchButton) {
             model.setRowCount(0);
-            scrollPane.getViewport().setBackground(new Color(0x212020));
-            scrollPane.setBorder(BorderFactory.createEmptyBorder());
-
             String keyword = searchBox.getText().strip();
-            if (keyword.isEmpty()) {
-                return;
-            }
 
-            try {
-                List<BookTableDTO> books = bookService.searchBooks(keyword);
-                for (BookTableDTO b : books) {
-                    // Check if this student already has this specific book issued
-                    boolean alreadyBorrowed = isAlreadyBorrowed(b.getBookId());
-                    String buttonLabel = alreadyBorrowed ? "Borrowed" : "Borrow";
-                    model.addRow(new Object[]{
-                            b.getTitle(),
-                            b.getAuthor(),
-                            b.getTotalCopies() > 0 ? "Yes" : "No",
-                            buttonLabel
-                    });
-                }
-            } catch (RuntimeException ex) {
-                JOptionPane.showMessageDialog(searchBooksCard, ex.getMessage(),
-                        "Search", JOptionPane.INFORMATION_MESSAGE);
-            }
-        }
-    }
-
-    private boolean isAlreadyBorrowed(int bookId) {
-        String sql = "SELECT 1 FROM Transactions WHERE user_id = ? AND book_id = ? AND status = 'ISSUED'";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userId);
-            ps.setInt(2, bookId);
-            return ps.executeQuery().next();
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-            return false;
+            getSearchedBooks(keyword);
         }
     }
 }

@@ -110,6 +110,7 @@ public class LibrarianFrame extends JFrame implements ActionListener {
             @Override
             public void componentShown(ComponentEvent e) {
                 librarianFrameDashboardCard.getIssuedBooks();
+                librarianFrameDashboardCard.addBooksIssuedToday();
 
                 dashboardCard.revalidate();
                 dashboardCard.repaint();

@@ -110,6 +110,8 @@ public class StudentFrameMyBooksCard {
         myBooksTable.setFont(new Font("FiraMono NerdFonts", Font.PLAIN, 14));
         myBooksTable.setRowHeight(25);
 
+        int statusColumn = 3;
+
         myBooksTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
@@ -120,6 +122,15 @@ public class StudentFrameMyBooksCard {
                 label.setBackground(new Color(0x388A7C));
                 label.setOpaque(true);
                 label.setForeground(Color.WHITE);
+
+                if (column == statusColumn) {
+                    String status = table.getValueAt(row, column) != null
+                            ? table.getValueAt(row, column).toString() : "";
+                    label.setBackground(status.equals("Overdue")
+                            ? new Color(0xB82323) : new Color(0x309912));
+                    label.setFont(new Font("FiraMono NerdFont", Font.BOLD, 16));
+                }
+
                 return label;
             }
         });
