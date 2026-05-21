@@ -59,35 +59,19 @@ public class StudentFrameMyBooksCard {
         booksReturnInformation.setBorder(BorderFactory.createEmptyBorder(15, 30, 15, 10));
         booksReturnInformation.setFont(new Font("FiraMono NerdFont", Font.PLAIN, 15));
 
-        String sql = "SELECT b.title, t.due_date, " +
-                "CASE WHEN t.due_date < CURDATE() THEN 1 ELSE 0 END AS overdue " +
-                "FROM Transactions t JOIN Books b ON t.book_id = b.book_id " +
-                "WHERE t.user_id = ? AND t.status = 'ISSUED' " +
-                "ORDER BY overdue DESC, t.due_date ASC LIMIT 1";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, user.getUserId());
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                String title = rs.getString("title");
-                Date dueDate = rs.getDate("due_date");
-                boolean overdue = (rs.getInt("overdue") == 1);
-                if (overdue) {
-                    booksReturnInformation.setForeground(Color.WHITE);
-                    booksReturnInformation.setBackground(new Color(0xF59E0B));
-                    booksReturnInformation.setText(title + " is overdue since " + dueDate + " ⎯ please return immediately.");
-                } else {
-                    booksReturnInformation.setBackground(new Color(0xF0E526));
-                    booksReturnInformation.setText(title + " is due on " + dueDate + " ⎯ please return on time.");
-                }
-            } else {
-                booksReturnInformation.setBackground(new Color(0x29CF45));
-                booksReturnInformation.setText("No books currently borrowed.");
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
+        int overdueBooks = transactionService.getTotalOverdueBooksCount(user.getUserId());
+        int booksCurrentlyBorrowed = transactionService.getCurrentlyBorrowedBooksCount(user.getUserId());
+
+        if (overdueBooks > 0) {
+            booksReturnInformation.setForeground(Color.WHITE);
+            booksReturnInformation.setBackground(new Color(0xF59E0B));
+            booksReturnInformation.setText(overdueBooks + " book(s) overdue" +  " ⎯ please return as soon as possible.");
+        } else if (booksCurrentlyBorrowed > 0) {
             booksReturnInformation.setBackground(new Color(0xF0E526));
-            booksReturnInformation.setText("Could not load book information.");
+            booksReturnInformation.setText(booksCurrentlyBorrowed + " book(s) borrowed" +  " ⎯ please return on time.");
+        } else {
+            booksReturnInformation.setBackground(new Color(0x29CF45));
+            booksReturnInformation.setText("No books currently borrowed.");
         }
 
         GridBagConstraints gbc = new GridBagConstraints();

@@ -66,10 +66,15 @@ public class StudentFrameDashboardCard {
         booksReturnInformation.setBorder(BorderFactory.createEmptyBorder(15, 30, 15, 10));
         booksReturnInformation.setFont(new Font("FiraMono NerdFont", Font.PLAIN, 15));
 
+        int overdueBooks = transactionService.getTotalOverdueBooksCount(user.getUserId());
         int booksCurrentlyBorrowed = transactionService.getCurrentlyBorrowedBooksCount(user.getUserId());
-        if (booksCurrentlyBorrowed > 0) {
+
+        if (overdueBooks > 0) {
             booksReturnInformation.setForeground(Color.WHITE);
             booksReturnInformation.setBackground(new Color(0xF59E0B));
+            booksReturnInformation.setText(overdueBooks + " book(s) overdue" +  " ⎯ please return as soon as possible.");
+        } else if (booksCurrentlyBorrowed > 0) {
+            booksReturnInformation.setBackground(new Color(0xF0E526));
             booksReturnInformation.setText(booksCurrentlyBorrowed + " book(s) borrowed" +  " ⎯ please return on time.");
         } else {
             booksReturnInformation.setBackground(new Color(0x29CF45));
