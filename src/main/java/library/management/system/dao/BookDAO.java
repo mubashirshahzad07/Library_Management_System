@@ -255,6 +255,7 @@ public class BookDAO {
 
         String sql = """
             SELECT
+                isbn,
                 title,
                 author,
                 total_copies,
@@ -272,6 +273,7 @@ public class BookDAO {
             while (rs.next()) {
 
                 BookCatalogDTO book = new BookCatalogDTO(
+                        rs.getString("isbn"),
                         rs.getString("title"),
                         rs.getString("author"),
                         rs.getInt("total_copies"),
@@ -295,11 +297,12 @@ public class BookDAO {
         List<BookCatalogDTO> books = new ArrayList<>();
 
         String sql = """
-            SELECT title, author, total_copies, available_copies
+            SELECT isbn, title, author, total_copies, available_copies
             FROM Books
             WHERE is_active = TRUE
             AND (
-                title LIKE ?
+                isbn LIKE ?
+                OR title LIKE ?
                 OR author LIKE ?
             )
         """;
@@ -312,12 +315,14 @@ public class BookDAO {
 
             stmt.setString(1, search);
             stmt.setString(2, search);
+            stmt.setString(3, search);
 
             ResultSet rs = stmt.executeQuery();
 
             while (rs.next()) {
 
                 BookCatalogDTO book = new BookCatalogDTO(
+                        rs.getString("isbn"),
                         rs.getString("title"),
                         rs.getString("author"),
                         rs.getInt("total_copies"),

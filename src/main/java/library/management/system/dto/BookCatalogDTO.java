@@ -2,13 +2,15 @@ package library.management.system.dto;
 
 public class BookCatalogDTO {
 
+    private String isbn;
     private String title;
     private String author;
     private int totalCopies;
     private int availableCopies;
     private String status;
 
-    public BookCatalogDTO(String title, String author, int totalCopies, int availableCopies) {
+    public BookCatalogDTO(String isbn, String title, String author, int totalCopies, int availableCopies) {
+        this.isbn = isbn;
         this.title = title;
         this.author = author;
         this.totalCopies = totalCopies;
@@ -21,6 +23,10 @@ public class BookCatalogDTO {
         }
     }
 
+    public String getIsbn() {
+        return isbn;
+    }
+    
     public String getTitle() {
         return title;
     }
