@@ -144,9 +144,9 @@ public class AdminFrameSystemReportsCard {
         searchField.setPreferredSize(new Dimension(100, 42));
 
         searchField.getDocument().addDocumentListener(new DocumentListener() {
-            public void insertUpdate(DocumentEvent e)  { applyFilter(); }
-            public void removeUpdate(DocumentEvent e)  { applyFilter(); }
-            public void changedUpdate(DocumentEvent e) { applyFilter(); }
+            public void insertUpdate(DocumentEvent e)  { executeSearch(); }
+            public void removeUpdate(DocumentEvent e)  { executeSearch(); }
+            public void changedUpdate(DocumentEvent e) { executeSearch(); }
         });
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -168,12 +168,12 @@ public class AdminFrameSystemReportsCard {
             }
         };
 
-        model.addColumn("TXN ID");
-        model.addColumn("MEMBER USERNAME");
-        model.addColumn("BOOK TITLE");
-        model.addColumn("ISSUE DATE");
-        model.addColumn("DUE DATE");
-        model.addColumn("STATUS");
+        model.addColumn("Txn ID");
+        model.addColumn("Member Username");
+        model.addColumn("Book Title");
+        model.addColumn("Issue Date");
+        model.addColumn("Due Date");
+        model.addColumn("Status");
 
         reportsTable = new JTable(model);
         reportsTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
@@ -254,17 +254,11 @@ public class AdminFrameSystemReportsCard {
     }
 
     private void loadLiveTableData() {
-        model.setRowCount(0);
-        List<TransactionReportDTO> reports = transactionService.getTransactionReports();
-        for (TransactionReportDTO report : reports) {
-            model.addRow(new Object[]{
-                "TXN-" + String.format("%03d", report.getTransactionId()),
-                report.getUsername(),
-                report.getBookTitle(),
-                report.getIssueDate().toString(),
-                report.getDueDate().toString(),
-                report.getStatus()
-            });
+        try {
+            List<TransactionReportDTO> reports = transactionService.getTransactionReports();
+            populateTable(reports);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -279,14 +273,37 @@ public class AdminFrameSystemReportsCard {
         systemReportsCard.add(Box.createVerticalGlue(), gbc);
     }
 
-    // live update filter:(same logic used)
+    // live update filter:
 
-    private void applyFilter() {
-        String text = searchField.getText().strip();
-        if (text.isEmpty()) {
-            sorter.setRowFilter(null);
-        } else {
-            sorter.setRowFilter(RowFilter.regexFilter("(?i)" + text, 1, 2));
+    private void executeSearch() {
+        String keyword = searchField.getText().strip();
+        try {
+            if (keyword.isEmpty()) {
+                loadLiveTableData();
+            } else {
+                // Strips display formatting
+                if (keyword.toUpperCase().matches("^TXN-\\d+")) {
+                    keyword = keyword.substring(4).replaceFirst("^0+", "");
+                }
+                List<TransactionReportDTO> filteredReports = transactionService.searchTransactionReports(keyword.toLowerCase());
+                populateTable(filteredReports);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void populateTable(List<TransactionReportDTO> reports) {
+        model.setRowCount(0);
+        for (TransactionReportDTO report : reports) {
+            model.addRow(new Object[]{
+                "TXN-" + String.format("%03d", report.getTransactionId()),
+                report.getUsername(),
+                report.getBookTitle(),
+                report.getIssueDate().toString(),
+                report.getDueDate().toString(),
+                report.getStatus()
+            });
         }
     }
 
