@@ -22,7 +22,7 @@ public class LoginFrame extends JFrame implements ActionListener {
         int screenWidth = (int) screenSize.getWidth();
         int screenHeight = (int) screenSize.getHeight();
 
-       ImageIcon originalImage = new ImageIcon(ClassLoader.getSystemResource("library_background.jpg"));
+       ImageIcon originalImage = new ImageIcon(ClassLoader.getSystemResource("login_background.jpg"));
         int backgroundImageWidth = 2 * (screenWidth / 3);
         int backgroundImageHeight = 2 * (screenHeight / 3);
         Image scaledImage = originalImage.getImage().getScaledInstance(backgroundImageWidth, backgroundImageHeight, Image.SCALE_SMOOTH);
@@ -163,7 +163,7 @@ public class LoginFrame extends JFrame implements ActionListener {
         }
 
         if (role.equalsIgnoreCase("admin")) {
-            new LibrarianFrame(this, user); // reuse LibrarianFrame for Admin until AdminFrame is complete
+            new AdminFrame(this, user.getUsername());
         } else if (role.equalsIgnoreCase("librarian")) {
             new LibrarianFrame(this, user);
         } else {
