@@ -256,11 +256,11 @@ public class AdminFrameManageUsersCard implements ActionListener {
             }
         };
 
-        model.addColumn("USER ID");
-        model.addColumn("NAME");
-        model.addColumn("USERNAME");
-        model.addColumn("ROLE");
-        model.addColumn("STATUS");
+        model.addColumn("User ID");
+        model.addColumn("Name");
+        model.addColumn("Username");
+        model.addColumn("Role");
+        model.addColumn("Status");
 
         usersTable = new JTable(model);
         usersTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
