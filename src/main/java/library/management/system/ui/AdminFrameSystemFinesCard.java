@@ -144,9 +144,9 @@ public class AdminFrameSystemFinesCard {
         searchField.setPreferredSize(new Dimension(100, 42));
 
         searchField.getDocument().addDocumentListener(new DocumentListener() {
-            public void insertUpdate(DocumentEvent e)  { applyFilter(); }
-            public void removeUpdate(DocumentEvent e)  { applyFilter(); }
-            public void changedUpdate(DocumentEvent e) { applyFilter(); }
+            public void insertUpdate(DocumentEvent e)  { executeSearch(); }
+            public void removeUpdate(DocumentEvent e)  { executeSearch(); }
+            public void changedUpdate(DocumentEvent e) { executeSearch(); }
         });
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -168,13 +168,13 @@ public class AdminFrameSystemFinesCard {
             }
         };
 
-        model.addColumn("TXN ID");
-        model.addColumn("STUDENT USERNAME");
-        model.addColumn("BOOK TITLE");
-        model.addColumn("DUE DATE");
-        model.addColumn("RET. DATE");
-        model.addColumn("FINE AMOUNT");
-        model.addColumn("STATUS");
+        model.addColumn("Txn ID");
+        model.addColumn("Student Username");
+        model.addColumn("Book Title");
+        model.addColumn("Due Date");
+        model.addColumn("Ret. Date");
+        model.addColumn("Fine Amount");
+        model.addColumn("Status");
 
         finesTable = new JTable(model);
         finesTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
@@ -251,21 +251,11 @@ public class AdminFrameSystemFinesCard {
     }
 
     private void loadLiveTableData() {
-        model.setRowCount(0);
-        List<FineReportDTO> reports = fineService.getFineReport();
-        for (FineReportDTO report : reports) {
-            String returnStr = (report.getReturnDate() != null) ? report.getReturnDate().toString() : "PENDING";
-            String dueStr    = (report.getDueDate() != null) ? report.getDueDate().toString() : "N/A";
-            
-            model.addRow(new Object[]{
-                "TXN-" + String.format("%03d", report.getTransactionId()),
-                report.getUsername(),
-                report.getBookTitle(),
-                dueStr,
-                returnStr,
-                "Rs. " + String.format("%.2f", report.getFineAmount()),
-                report.getPaymentStatus()
-            });
+        try {
+            List<FineReportDTO> reports = fineService.getFineReport();
+            populateTable(reports);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -282,12 +272,39 @@ public class AdminFrameSystemFinesCard {
 
     // ── LIVE FILTER ───────────────────────────────────────────────────────────
 
-    private void applyFilter() {
-        String text = searchField.getText().strip();
-        if (text.isEmpty()) {
-            sorter.setRowFilter(null);
-        } else {
-            sorter.setRowFilter(RowFilter.regexFilter("(?i)" + text, 1));
+    private void executeSearch() {
+        String keyword = searchField.getText().strip();
+        try {
+            if (keyword.isEmpty()) {
+                loadLiveTableData();
+            } else {
+                // Strips display formatting to clean query IDs just like user ui
+                if (keyword.toUpperCase().matches("^TXN-\\d+")) {
+                    keyword = keyword.substring(4).replaceFirst("^0+", "");
+                }
+                List<FineReportDTO> filteredReports = fineService.searchFineReport(keyword.toLowerCase());
+                populateTable(filteredReports);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void populateTable(List<FineReportDTO> reports) {
+        model.setRowCount(0);
+        for (FineReportDTO report : reports) {
+            String returnStr = (report.getReturnDate() != null) ? report.getReturnDate().toString() : "PENDING";
+            String dueStr    = (report.getDueDate() != null) ? report.getDueDate().toString() : "N/A";
+            
+            model.addRow(new Object[]{
+                "TXN-" + String.format("%03d", report.getTransactionId()),
+                report.getUsername(),
+                report.getBookTitle(),
+                dueStr,
+                returnStr,
+                "Rs. " + String.format("%.2f", report.getFineAmount()),
+                report.getPaymentStatus()
+            });
         }
     }
 
