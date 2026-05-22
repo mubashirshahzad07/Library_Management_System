@@ -16,6 +16,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
+import java.util.ArrayList;
 
 
  // Handles the Manage Books panel for Admin with Live Search, Deactivation, and Restoration
@@ -280,13 +281,13 @@ public class AdminFrameManageBooksCard implements ActionListener {
         };
 
         // Column header modified: made it bk id :
-        model.addColumn("BK ID"); 
+        model.addColumn("Bk ID"); 
         model.addColumn("ISBN");
-        model.addColumn("TITLE");
-        model.addColumn("AUTHOR");
-        model.addColumn("CATEGORY");
-        model.addColumn("TOTAL COPIES");
-        model.addColumn("AVAILABLE COPIES");
+        model.addColumn("Title");
+        model.addColumn("Author");
+        model.addColumn("Category");
+        model.addColumn("Total Copies");
+        model.addColumn("Available Copies");
 
         booksTable = new JTable(model);
         booksTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
@@ -377,27 +378,15 @@ public class AdminFrameManageBooksCard implements ActionListener {
         manageBooksCard.add(scrollPane, gbc);
     }
 
-    // databse load:
+    // database load:
 
     private void loadTableData() {
-        model.setRowCount(0); 
         try {
+            // Passing empty string loads everything via DAO
             List<BookTableDTO> books = bookService.searchBooks("");
-            for (BookTableDTO b : books) {
-                // formatting plain database integers to alphanumeric prefix format (ensure dao method later)
-                String formattedBookId = "BK-" + String.format("%03d", b.getBookId());
-                model.addRow(new Object[]{
-                        formattedBookId,
-                        b.getIsbn(),
-                        b.getTitle(),
-                        b.getAuthor(),
-                        b.getCategory(),
-                        b.getTotalCopies(),
-                        b.getAvailableDisplay()
-                });
-            }
+            populateTable(books);
         } catch (RuntimeException e) {
-            System.out.println(e.getMessage());
+            model.setRowCount(0);
         }
     }
 
@@ -416,30 +405,59 @@ public class AdminFrameManageBooksCard implements ActionListener {
 
     private void executeBackendSearch() {
         String keyword = searchField.getText().strip();
-        
-        if (keyword.isEmpty()) {
-            loadTableData();
-            return;
-        }
-
-        model.setRowCount(0); 
         try {
-            List<BookTableDTO> results = bookService.searchBooks(keyword);
-            for (BookTableDTO b : results) {
-                // formatting plain database integers to alphanumeric prefix format(bk-...) (ensure dao method later)
-                String formattedBookId = "BK-" + String.format("%03d", b.getBookId());
-                model.addRow(new Object[]{
-                        formattedBookId,
-                        b.getIsbn(),
-                        b.getTitle(),
-                        b.getAuthor(),
-                        b.getCategory(),
-                        b.getTotalCopies(),
-                        b.getAvailableDisplay()
-                });
+            if (keyword.isEmpty()) {
+                loadTableData();
+                return;
             }
+
+            // Check if user is typing an explicit formatting pattern like "BK-001"
+            String parsedKeyword = keyword;
+            if (parsedKeyword.toUpperCase().matches("^BK-\\d+")) {
+                parsedKeyword = parsedKeyword.substring(3).replaceFirst("^0+", "");
+            }
+
+            // Fetch absolute list to run our direct matches against IDs or ISBN strings
+            List<BookTableDTO> allRecords = bookService.searchBooks("");
+            List<BookTableDTO> results = new ArrayList<>();
+
+            for (BookTableDTO b : allRecords) {
+                String idStr = String.valueOf(b.getBookId());
+                String isbnStr = b.getIsbn() != null ? b.getIsbn().toLowerCase() : "";
+                String titleStr = b.getTitle() != null ? b.getTitle().toLowerCase() : "";
+                String authorStr = b.getAuthor() != null ? b.getAuthor().toLowerCase() : "";
+                String catStr = b.getCategory() != null ? b.getCategory().toLowerCase() : "";
+                String lowerQuery = keyword.toLowerCase();
+
+                // Match against raw internal ID number or alphanumeric padded formatting or explicit details
+                if (idStr.equals(parsedKeyword) || 
+                    isbnStr.contains(lowerQuery) || 
+                    titleStr.contains(lowerQuery) || 
+                    authorStr.contains(lowerQuery) || 
+                    catStr.contains(lowerQuery)) {
+                    results.add(b);
+                }
+            }
+            populateTable(results);
+
         } catch (RuntimeException e) {
-            // Table remains empty if exceptions throw due to missing hits
+            model.setRowCount(0);
+        }
+    }
+
+    private void populateTable(List<BookTableDTO> books) {
+        model.setRowCount(0);
+        for (BookTableDTO b : books) {
+            String formattedBookId = "BK-" + String.format("%03d", b.getBookId());
+            model.addRow(new Object[]{
+                    formattedBookId,
+                    b.getIsbn(),
+                    b.getTitle(),
+                    b.getAuthor(),
+                    b.getCategory(),
+                    b.getTotalCopies(),
+                    b.getAvailableDisplay()
+            });
         }
     }
 
@@ -481,6 +499,7 @@ public class AdminFrameManageBooksCard implements ActionListener {
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(manageBooksCard,
                         "Total Copies must be a valid positive number.",
+                       
                         "Invalid Quantity",
                         JOptionPane.ERROR_MESSAGE);
                 return;
@@ -500,7 +519,7 @@ public class AdminFrameManageBooksCard implements ActionListener {
                 JOptionPane.showMessageDialog(manageBooksCard,
                         ex.getMessage(),
                         "Error Adding Book",
-                        JOptionPane.ERROR_MESSAGE);
+JOptionPane.ERROR_MESSAGE);
             }
         }
 
@@ -601,4 +620,3 @@ public class AdminFrameManageBooksCard implements ActionListener {
         }
     }
 }
-                
