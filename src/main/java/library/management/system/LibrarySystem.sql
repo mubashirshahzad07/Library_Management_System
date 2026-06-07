@@ -123,10 +123,10 @@ INSERT INTO Users (name, username, password, role) VALUES
 ('Hamza Waqas', 'Hamza_Student', 'hamza789', 'STUDENT'),
 ('Hassan Haider', 'Hassan_Librarian', 'hassan456', 'LIBRARIAN'),
 ('Muhammad Hisham', 'Hisham_Student', 'hisham123', 'STUDENT'),
-('Bashi Shahzad', 'Bashi_Librarian', 'bashipass', 'LIBRARIAN'),
 ('Hadeed Faisal', 'Hadeed_Student', 'hadeed555', 'STUDENT'),
 ('Muhammad Abuzar', 'Abuzar_Student', 'abuzar99', 'STUDENT'),
-('Sohaib Sarwar', 'Sohaib_Student', 'sohaib443', 'STUDENT');
+('Sohaib Sarwar', 'Sohaib_Student', 'sohaib443', 'STUDENT'),
+('Ahmad Khan', 'Admin', 'admin123', 'ADMIN');
 
 INSERT INTO Books (isbn, title, author, category, total_copies, available_copies) VALUES
 ('55-1579', 'The Maze Runner', 'James Dashner', 'Sci-fi', 5, 5),
